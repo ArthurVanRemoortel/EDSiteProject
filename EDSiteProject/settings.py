@@ -71,17 +71,40 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'EDSiteProject.wsgi.application'
 
+from dotenv import load_dotenv
+import os
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv('.env.local') if os.path.exists('.env.local') else load_dotenv('.env.dev')
+except ModuleNotFoundError:
+    pass
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+DATABASE_HOST = os.getenv('DATABASE_HOST')
+
+DATABASE_USER = os.getenv('DATABASE_USER')
+
+DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD')
+
+DATABASE_PORT = os.getenv('DATABASE_PORT')
+
+DATABASE_NAME = os.getenv('DATABASE_NAME')
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': DATABASE_NAME,
+        'USER': DATABASE_USER,
+        'PASSWORD': DATABASE_PASSWORD,
+        'HOST': DATABASE_HOST,
+        'PORT': DATABASE_PORT,
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
