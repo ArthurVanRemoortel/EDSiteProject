@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+{% extends 'EDSite/base.html'%}
+{% block title %}
+    Station - {{ station.name }}
+{% endblock %}
+
+{% block content %}
+
+    <div class="container" style="padding-top: 1em">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/">
+                        <span class="icon is-small">
+                            <i class="fas fa-home" aria-hidden="true"></i>
+                        </span>
+                        <span>Home</span></a></li>
+                <li>
+                    <a href="/stations">
+                        <span class="icon is-small">
+                            <i class="fa fa-satellite"></i>
+                        </span>
+                        <span>Stations</span>
+                    </a>
+                </li>
+                <li class="is-active"> <a href="#">{{ station.name }}</a></li>
+            </ul>
+        </nav>
+        <h2 class="title is-2 is-spaced bd-anchor-title">
+            {{ station.name }}
+            <a class="subtitle is-3 thin" href="/systems/{{ station.system.id }}">
+                {{ station.system.name }}
+            </a>
+        </h2>
+        <article class="panel is-info">
+            <div class="tabs panel-heading is-boxed">
+                <ul>
+                    <li class="is-active">
+                        <a>
+                            <span class="icon is-small"><i class="fas fa-circle-info" aria-hidden="true"></i></span>
+                            <span>Overview</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <span class="icon is-small"><i class="fas fa-shuttle-space" aria-hidden="true"></i></span>
+                            <span>Outfitting</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <span class="icon is-small"><i class="fa-solid fa-people-group" aria-hidden="true"></i></span>
+                            <span>Factions</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="panel-block columns">
+                <div class="column column_fixed_10">
+                </div>
+                <div class="column column_fixed_10">
+                </div>
+                <div class="column column_fixed_10">
+                </div>
+            </div>
+        </article>
+
+        <article class="panel is-info mt-6">
+            <p class="panel-heading">
+                Market
+            </p>
+            <div class="panel-block">
+                <table class="table is-hoverable is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th class="commodity_th"><abbr title="Name">Name</abbr></th>
+                        <th><abbr title="History"></abbr></th>
+                        <th><abbr title="Sell">Sell</abbr></th>
+                        <th><abbr title="Supply">Supply</abbr></th>
+                        <th><abbr title="Buy">Buy</abbr></th>
+                        <th><abbr title="Demand">Demand</abbr></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for category_name, listings in listings_by_category.items %}
+                        <tr><th colspan="6">{{ category_name }}</th></tr>
+                        {% for listing in listings %}
+                            {% if listing.supply_level or listing.demand_level %}
+                                <tr>
+                                    <th> <a href="/commodities/{{ listing.commodity_id }}">{{ listing.commodity.name }}</a> </th>
+                                    <th> - </th>
+                                    {% if listing.supply_level > 0 %}
+                                        <th> <span class="cr">CR</span> {{ listing.supply_price }} </th>
+                                        <th> {{ listing.supply_units }} </th>
+                                    {% else %}
+                                        <th></th>
+                                        <th></th>
+                                    {% endif %}
+                                    {% if listing.demand_level > 0 %}
+                                        <th> <span class="cr">CR</span> {{ listing.demand_price }}</th>
+                                        <th> {{ listing.demand_units }}</th>
+                                    {% else %}
+                                        <th></th>
+                                        <th></th>
+                                    {% endif %}
+                                </tr>
+                            {% endif %}
+
+                        {% endfor %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+    </div>
+{% endblock %}

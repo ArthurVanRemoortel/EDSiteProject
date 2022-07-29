@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+{% extends 'EDSite/base.html'%}
+{% block title %}
+    Commodities
+{% endblock %}
+
+{% block content %}
+    <div class="container is-fluid">
+        {% for category in categories %}
+            <br>
+            <h3 class="title is-4 is-spaced bd-anchor-title">
+                <a class="bd-anchor-link" href="#{{ category.name }}"> # </a>
+                <span class="bd-anchor-name"> {{ category.name }} </span>
+
+            </h3>
+            <table class="table is-hoverable is-fullwidth ">
+                <thead>
+                <tr>
+                    <th class="commodity_th"><abbr title="Name">Name</abbr></th>
+                    <th style="text-align: right"><abbr title="Maximum Buy">Max. Buy</abbr></th>
+                    <th><abbr title="Minimum Buy Location"></abbr></th>
+                    <th style="text-align: right"><abbr title="Minimum Sell">Min. Sell</abbr></th>
+                    <th><abbr title="Minimum Sell Location"></abbr></th>
+                    <th style="text-align: right; padding-right:2em"><abbr title="Profit">Profit</abbr></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for commodity in category.sorted_commodities %}
+                    <tr>
+                        <th> <a href="/commodities/{{ commodity.id }}">{{ commodity.name }}</a> </th>
+                            <td style="text-align: right">
+                                {% if commodity.best_buy is not None %}
+                                    {{ commodity.best_buy.demand_price }}
+                                    <span class="cr ml-1">
+                                        CR
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if commodity.best_buy is not None %}
+                                    <a href="/stations/{{ commodity.best_buy.station_id }}">
+                                        {% with station_type=commodity.best_buy.station.station_type.name %}
+                                            {% include 'EDSite/snippets/station_type.html' %}
+                                        {% endwith %}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td style="text-align: right">
+                                {% if commodity.best_sell is not None %}
+                                    {{ commodity.best_sell.supply_price }}
+                                    <span class="cr ml-1">
+                                        CR
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if commodity.best_sell is not None %}
+                                    <a href="/stations/{{ commodity.best_sell.station_id }}">
+                                        {% with station_type=commodity.best_sell.station.station_type.name %}
+                                            {% include 'EDSite/snippets/station_type.html' %}
+                                        {% endwith %}
+                                    </a>
+                                {% endif %}
+                            </td>
+
+                        <td style="text-align: right; padding-right:2em">
+                            {% with profit=commodity.max_profit %}
+                                {% if profit %}
+                                    {{ profit }}
+                                    <span class="cr ml-1">
+                                            CR
+                                    </span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+
+{% endblock %}
+</html>

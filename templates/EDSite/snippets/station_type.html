@@ -1,0 +1,11 @@
+<span class="icon is-small">
+    {% if station_type == "FLEET" %}
+        <i class="fa fa-shuttle-space"></i>
+    {% elif station_type == "PLANETARY" %}
+        <i class="fa fa-globe"></i>
+    {% elif station_type == "STATION" %}
+        <i class="fa fa-satellite"></i>
+    {% else %}
+        <i class="fa-regular fa-circle-question"></i>
+    {% endif %}
+</span>

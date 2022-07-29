@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+{% extends 'EDSite/base.html'%}
+{% block title %}
+    Login
+{% endblock %}
+
+{% block content %}
+<div class="container is-max-desktop" style="padding-top: 1em; max-width:800px">
+    <article class="panel is-info">
+        <p class="panel-heading">
+            Register
+        </p>
+        <div class="panel-block columns">
+            <div class="column">
+                <form action="{% url 'signup' %}" method="post">
+                    {% csrf_token %}
+                    <div class="field">
+                        <label class="label">Username</label>
+                        {{ signup_form.username }}
+                    </div>
+                    <div class="field">
+                        <label class="label">Email</label>
+                        {{ signup_form.email }}
+                    </div>
+                    <div class="field">
+                        <label class="label">Password</label>
+                        {{ signup_form.password1 }}
+                    </div>
+                    <div class="field">
+                        <label class="label">Password</label>
+                        {{ signup_form.password2 }}
+                    </div>
+                    <div class="field is-grouped">
+                        <div class="control">
+                            <button type="submit" class="button is-link">Sign Up</button>
+                        </div>
+                        <div class="control">
+                            {% if messages %}
+                                <ul class="messages">
+                                    {% for message in messages %}
+                                    <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </article>
+</div>
+{% endblock %}

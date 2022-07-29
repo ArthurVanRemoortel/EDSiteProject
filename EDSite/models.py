@@ -229,3 +229,18 @@ class CarrierTrade(models.Model):
     active = models.BooleanField()
     date_posted = models.DateTimeField()
     date_completed = models.DateTimeField()
+
+
+    def station_units(self):
+        live_listing: LiveListing = self.station.listings.filter(Q(commodity_id=self.commodity.id))
+
+    def current_profit(self):
+        ...
+
+    @property
+    def is_loading(self):
+        return self.mode == "L"
+
+    @property
+    def is_unloading(self):
+        return self.mode == "U"

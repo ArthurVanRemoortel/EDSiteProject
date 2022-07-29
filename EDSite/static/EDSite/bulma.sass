@@ -1,0 +1,163 @@
+@charset "utf-8"
+
+// Import a Google Font
+@import url('https://fonts.googleapis.com/css?family=Nunito:400,700')
+
+// Set your brand colors
+$darkest: #222831
+$grey: #393E46
+$orange: #D65A31
+//$light-orange: #FF7844
+$light-orange: #FF7844
+$almost-white: #EEEEEE
+
+$light-grey: #b39999
+$almost-black: #191c21
+$darkest-purple: #251D3A
+$dark-blue: #1B1F3A
+$dark-purple: #53354A
+$dark-orange: #A64942
+
+
+$family-sans-serif: "Nunito", sans-serif
+//$grey-dark: $brown
+//$grey-light: $beige-light
+
+
+$primary: $light-orange
+$light: $almost-white
+$link: $light-orange
+$link-hover: $dark-orange
+$dark: $grey
+$border-light: $light-orange
+$border-dark: $light-orange
+$border-hover: $light-orange
+
+//$widescreen-enabled: false
+//$fullhd-enabled: false
+
+// Update some of Bulma's component variables
+$body-background-color: $grey
+
+$navbar-background-color: $darkest
+$navbar-item-color: $almost-white
+$navbar-divider-background-color: $light-orange
+
+$dropdown-color: $grey
+$color: $orange
+$text-strong: $almost-white
+$subtitle-color: $light-orange
+$info: $light-orange
+
+$navbar-dropdown-item-hover-color: $light-orange
+$navbar-dropdown-background-color: $darkest
+
+$navbar-item-hover-background-color: $almost-black
+$navbar-dropdown-item-hover-background-color: $almost-black
+$navbar-dropdown-border-top: 2px solid $light-orange
+
+$table-background-color: transparent
+$table-cell-border: 1px none $orange
+$table-row-hover-background-color: $darkest
+
+$panel-shadow: 0 0.5em 1em -0.125em rgba(hsl(100%, 0%, 4%), 0.5), 0 0px 0 1px rgba(hsl(100%, 0%, 4%), 0.02)
+
+$input-color: $primary
+$input-background-color: $grey
+$input-border-color: $primary
+
+$tabs-link-active-color: $grey
+
+$tabs-boxed-link-radius: 8px
+
+
+
+$tabs-box:  $primary
+$tabs-border-bottom-color: $darkest
+$tabs-boxed-link-active-background-color: $grey
+$tabs-boxed-link-active-border-color: $darkest
+$tabs-link-active-color: $light-orange
+
+$tabs-boxed-link-hover-background-color: $darkest
+$tabs-link-hover-color: $dark-orange
+$tabs-boxed-link-hover-border-bottom-color: $darkest
+
+
+
+$tabs-toggle-link-border-color: $primary
+$tabs-toggle-link-hover-background-color: $primary
+//$tabs-link-color: $primary
+
+//$tabs-boxed-link-active-background-color: blue
+//$tabs-boxed-link-active-border-bottom-color: green
+//$tabs-boxed-link-active-background-color: red
+//$tabs-color: red
+//$tabs-link-active-color: black
+//$tabs-boxed-link-active-border-bottom-color: green
+
+/*! bulma.io v0.9.4 | MIT License | github.com/jgthms/bulma */
+@import "sass/utilities/_all"
+@import "sass/base/_all"
+@import "sass/elements/_all"
+@import "sass/form/_all"
+@import "sass/components/_all"
+@import "sass/grid/_all"
+@import "sass/helpers/_all"
+@import "sass/layout/_all"
+
+.carrier_missions_tabs a
+  color: $primary
+  &:hover
+    color: $grey
+
+.carrier_missions_tabs
+  &.is-toggle
+    li
+      &.is-active
+        a
+          color: $grey
+
+
+.panel
+  background-color: $darkest
+
+.box
+  background-color: $darkest
+  color: $almost-white
+
+.is-white
+  color: $almost-white
+
+.sus
+  background-color: $darkest
+
+.cr
+  color: $light-orange
+
+.column_fixed_10
+  width: 10em
+  flex-basis: auto
+  flex-grow: 0
+
+.column_fixed_20
+  width: 20em
+  flex-basis: auto
+  flex-grow: 0
+
+.select
+  width: 100%
+
+select
+  width: 100%
+
+.carrier_order_row
+  th
+    padding-left: 0 !important
+    width: 48%
+
+.carrier-mission-location
+  figure
+    margin-left: 0
+    margin-right: 1em
+
+
