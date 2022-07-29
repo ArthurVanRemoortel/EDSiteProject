@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
-from django.core import cache
+from django.core.cache import cache
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -102,6 +102,7 @@ def commodity(request, item_id):
         'listings': listings,
         'form': form
     }
+    # print(cache.get(f'best_{item_id}'))
     return render(request, 'EDSite/commodity.html', base_context(request) | context)
 
 
@@ -127,11 +128,13 @@ def debug_update_database(request, mode='False'):
     cache = mode == 'cache'
 
     print(f"Updating local database ({mode})...")
-    EDData().update_local_database(update_stations=update_all,
-                                   update_systems=update_all,
+    EDData().update_local_database(data=update_all or quick,
+                                   update_stations=update_all or quick,
+                                   update_systems=update_all or quick,
                                    update_commodities=update_all or quick,
-                                   update_listings=update_all or listings,
-                                   update_cache=update_all or listings or cache
+                                   update_listings=update_all or listings or quick,
+                                   update_cache=update_all or listings or cache or quick,
+                                   full_listings_update=not quick,
                                    )
     return JsonResponse({
         "status": "No status"

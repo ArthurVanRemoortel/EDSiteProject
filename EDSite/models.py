@@ -3,6 +3,7 @@ from django.db import models
 from EDSite.helpers import StationType
 from django.core.cache import cache
 import datetime
+from django.conf import settings
 
 
 class CommodityCategory(models.Model):
@@ -105,7 +106,7 @@ class Station(models.Model):
     refuel = models.BooleanField()
     repair = models.BooleanField()
     planetary = models.BooleanField()
-    fleet = models.BooleanField()
+    fleet = models.BooleanField() # TODO: Maybe index?
     odyssey = models.BooleanField()
 
     system = models.ForeignKey(System, on_delete=models.CASCADE, related_name='stations')
@@ -157,9 +158,11 @@ class LiveListing(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['commodity', 'station'], name='Unique combination of commodity and station.')
         ]
-        index_together = [
-            ("commodity", "station", "modified"),
-        ]
+        # index_together = [
+        #     ("commodity", "station", "modified"),
+        # ]
+
+        ordering = ['-id']
 
     @property
     def is_recently_modified(self):
@@ -168,7 +171,7 @@ class LiveListing(models.Model):
     def is_high_supply(self, minimum=5000):
         return self.supply_units > minimum
 
-    def is_high_demand(self, minimum=1000):
+    def is_high_demand(self, minimum=5000):
         return self.demand_units > minimum
 
     @property
@@ -186,8 +189,8 @@ class LiveListing(models.Model):
 
 
 class HistoricListing(models.Model):
-    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='historic_listings', db_index=True)
-    station = models.ForeignKey(Station, on_delete=models.CASCADE, db_index=True)
+    commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='historic_listings')
+    station = models.ForeignKey(Station, on_delete=models.CASCADE)
     demand_price = models.IntegerField()
     demand_units = models.IntegerField()
     demand_level = models.IntegerField()
@@ -198,5 +201,31 @@ class HistoricListing(models.Model):
 
     class Meta:
         index_together = [
-            ("commodity", "station", "datetime"),
+            ("commodity", "station"),
         ]
+
+    @classmethod
+    def from_live(cls, live_listing: LiveListing):
+        return cls(
+            commodity=live_listing.commodity,
+            station=live_listing.station,
+            demand_price=live_listing.demand_price,
+            demand_units=live_listing.demand_units,
+            demand_level=live_listing.demand_level,
+            supply_price=live_listing.supply_price,
+            supply_units=live_listing.supply_units,
+            supply_level=live_listing.supply_level,
+            datetime=live_listing.modified,
+        )
+
+
+class CarrierTrade(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    mode = models.CharField(max_length=1)
+    station = models.ForeignKey(Station, on_delete=models.SET_NULL, null=True)
+    commodity = models.ForeignKey(Commodity, on_delete=models.SET_NULL, null=True)
+    units = models.IntegerField()
+    price = models.IntegerField()
+    active = models.BooleanField()
+    date_posted = models.DateTimeField()
+    date_completed = models.DateTimeField()

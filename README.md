@@ -7,3 +7,4 @@ TODO:
 - Auto background updates
 - Proper login and signup form validation.
   - https://docs.djangoproject.com/en/4.0/topics/auth/customizing/
+- Fleet carrier markets broken? Listings are never deleted.
