@@ -10,8 +10,8 @@ from pprint import pprint
 
 import zmq
 
-from EDSite.helpers import make_timezone_aware
-from EDSite.models import Commodity, LiveListing, Station
+from EDSite.helpers import make_timezone_aware, difference_percent
+from EDSite.models import Commodity, LiveListing, Station, HistoricListing
 
 # WHITELISTED_SOFTWARE = [
 #     "E:D Market Connector [Windows]",
@@ -134,6 +134,7 @@ class LiveListener:
         to_update_stations = []
         new_stations = []
         new_listings = []
+        new_historic_listings = []
         # carriers_of_interest = self.ed_data.get_carriers_of_interest() # TODO: Update this regularly.
         while self.active:
             if self.paused:
@@ -158,16 +159,17 @@ class LiveListener:
             if to_update_stations:
                 Station.objects.bulk_update(list(to_update_stations), ['system_id'])
                 # print(f"Took {time.time() - t0}")
-                print(f"Updated {len(to_update_stations)} stations.")
+                # print(f"Updated {len(to_update_stations)} stations.")
                 to_update_stations = []
-
+            if new_historic_listings:
+                HistoricListing.objects.bulk_create(new_historic_listings)
 
             try:
                 entry = self.data_queue.popleft()
             except IndexError:
                 time.sleep(1)
                 continue
-            print('-------------------------------------------------')
+            # print('-------------------------------------------------')
             # Get the station_is using the system and station names.
             system_name = entry.system.lower()
             station_name = entry.station.lower()
@@ -186,7 +188,7 @@ class LiveListener:
                 continue
             station: Station = self.ed_data.station_names_dict.get((station_name, system_name))
             if not station and len(station_name) == 7 and station_name[3] == '-':
-                print("Looking for station ignoring system")
+                # print("Looking for station ignoring system")
                 for station_key, value in self.ed_data.station_names_dict.items():
                     if station_key[0] == station_name:
                         station = self.ed_data.station_names_dict.get(station_key)
@@ -206,8 +208,9 @@ class LiveListener:
                 t0 = time.time()
                 # station_listings = {listing.commodity_id: listing for listing in station.listings.all()}
                 station_listings = {listing.commodity_id: listing for listing in LiveListing.objects.filter(station_tradedangerous_id=station.tradedangerous_id)}
-                print('station_listings: ', time.time() - t0)
-                print(f"Update for station {station} with {len(commodities)} commodities. ({len(station_listings)} existing)")
+                # station.data_age_days =
+                # print('station_listings: ', time.time() - t0)
+                # print(f"Update for station {station} with {len(commodities)} commodities. ({len(station_listings)} existing)")
                 for commodity_entry in commodities:
                     commodity_name = commodity_entry['name'].lower()
                     if (commodity_entry['sellPrice'] == 0 and commodity_entry['buyPrice'] == 0) or (commodity_entry['demand'] == 0 and commodity_entry['stock'] == 0):
@@ -222,8 +225,8 @@ class LiveListener:
                             commodity = self.commodity_names.get(fixed_name)
                     if commodity:
                         live_listings: LiveListing = station_listings.get(commodity.id)
-                        demand_price = commodity_entry['buyPrice']
-                        supply_price = commodity_entry['sellPrice']
+                        demand_price = commodity_entry['sellPrice']
+                        supply_price = commodity_entry['buyPrice']
                         demand_units = commodity_entry['demand']
                         supply_units = commodity_entry['stock']
                         if live_listings:
@@ -231,15 +234,18 @@ class LiveListener:
                             #         or supply_units != live_listings.supply_units \
                             #         or demand_price != live_listings.demand_price \
                             #         or supply_price != live_listings.supply_price:
-                                live_listings.demand_price = demand_price
-                                live_listings.supply_price = supply_price
-                                live_listings.demand_units = demand_units
-                                live_listings.supply_units = supply_units
-                                live_listings.modified = modified
-                                live_listings.from_live = 1
-                                to_update_listings.append(live_listings)
+                            live_listings.demand_price = demand_price
+                            live_listings.supply_price = supply_price
+                            live_listings.demand_units = demand_units
+                            live_listings.supply_units = supply_units
+                            live_listings.modified = modified
+                            live_listings.from_live = 1
+                            to_update_listings.append(live_listings)
+                            if not station.fleet:
+                                if (difference_percent(live_listings.demand_price, demand_price) > 10
+                                        or difference_percent(live_listings.supply_price, supply_price) > 10):
+                                    new_historic_listings.append(HistoricListing.from_live(live_listings))
                         else:
-                            # TODO: New listing?
                             live_listing = LiveListing(
                                 commodity_id=commodity.id,
                                 commodity_tradedangerous_id=commodity.tradedangerous_id,
@@ -259,6 +265,7 @@ class LiveListener:
                             print('WARNING: Commodity not found: ', commodity_name)
             else:
                 print(f"Station not found: {(station_name, system_name)}")
+            # TODO: Delete listings.
 
     def get_batch(self):
         while self.active:

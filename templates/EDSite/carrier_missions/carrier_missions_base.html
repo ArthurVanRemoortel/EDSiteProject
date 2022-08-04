@@ -54,10 +54,7 @@
                 </li>
             </ul>
         </div>
-
-        {% if tab == 'saved' %}
-            {% include 'EDSite/carrier_missions/carrier_mission_saved.html' %}
-        {% elif tab == 'all' %}
+        {% if tab == 'all' %}
             {% include 'EDSite/carrier_missions/carrier_mission_all.html' %}
         {% elif tab == 'my' %}
             {% include 'EDSite/carrier_missions/carrier_mission_my.html' %}

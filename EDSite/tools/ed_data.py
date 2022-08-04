@@ -39,13 +39,15 @@ class EDData(metaclass=SingletonMeta):
 
     def __init__(self) -> None:
         self.last_update = make_timezone_aware(datetime.now() - timedelta(days=4))
-
-        self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
-        self.system_names = {system.name.lower(): system for system in System.objects.all()}
-        self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
+        # self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
+        # self.system_names = {system.name.lower(): system for system in System.objects.all()}
+        # self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
         self.live_listener = LiveListener(ed_data=self)
 
     def start_live_listener(self):
+        self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
+        self.system_names = {system.name.lower(): system for system in System.objects.all()}
+        self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
         self.live_listener.start_background()
 
 
@@ -301,12 +303,13 @@ class EDData(metaclass=SingletonMeta):
                     try:
                         existing_live_listing = existing_live_listings[(station_id, com_id)]
                         if modified != existing_live_listing.modified:
-                            if (difference_percent(existing_live_listing.demand_price, demand_price) > 10
-                                    or difference_percent(existing_live_listing.supply_price, supply_price) > 10):
-                                new_historic_listings.append(HistoricListing.from_live(existing_live_listing))
-                                total_new_historic_listings += 1
-                            else:
-                                ignored_historic_listings += 1
+                            if not station.fleet:
+                                if (difference_percent(existing_live_listing.demand_price, demand_price) > 10
+                                        or difference_percent(existing_live_listing.supply_price, supply_price) > 10):
+                                    new_historic_listings.append(HistoricListing.from_live(existing_live_listing))
+                                    total_new_historic_listings += 1
+                                else:
+                                    ignored_historic_listings += 1
                             existing_live_listing.demand_price = demand_price
                             existing_live_listing.demand_units = demand_units
                             # existing_live_listing.demand_level = demand_level

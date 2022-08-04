@@ -6,7 +6,7 @@ from EDSite.helpers import StationType
 from django.core.cache import cache
 import datetime
 from django.conf import settings
-
+from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 
 class CommodityCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -157,24 +157,20 @@ class Station(models.Model):
 
 
 class LiveListing(models.Model):
+    objects = BulkUpdateOrCreateQuerySet.as_manager()
+
     commodity: Commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='listings')
     commodity_tradedangerous_id = models.IntegerField()
     station: Station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='listings')
     station_tradedangerous_id = models.IntegerField(db_index=True)
     demand_price = models.IntegerField()
     demand_units = models.IntegerField()
-    # demand_level = models.IntegerField()
     supply_price = models.IntegerField()
     supply_units = models.IntegerField()
-    # supply_level = models.IntegerField()
     modified = models.DateTimeField()
     from_live = models.BooleanField()
 
     class Meta:
-        ...
-        # constraints = [
-        #     models.UniqueConstraint(fields=['commodity', 'station'], name='Unique combination of commodity and station.')
-        # ]
         index_together = [
             ("commodity_id", "station_id"),
         ]
@@ -251,13 +247,19 @@ class CarrierMission(models.Model):
     @property
     def station_live_listing(self) -> LiveListing:
         if not self._station_live_listing:
-            self._station_live_listing = self.station.listings.filter(Q(commodity_id=self.commodity.id)).first()
+            if self.station.tradedangerous_id:
+                self._station_live_listing = LiveListing.objects.filter(Q(station_tradedangerous_id=self.station.tradedangerous_id) & Q(commodity_id=self.commodity.id)).first()
+            else:
+                self._station_live_listing = self.station.listings.filter(Q(commodity_id=self.commodity.id)).first()
         return self._station_live_listing
 
     @property
     def carrier_live_listing(self) -> LiveListing:
         if not self._carrier_live_listing:
-            self._carrier_live_listing = self.carrier.listings.filter(Q(commodity_id=self.commodity.id)).first()
+            if self.carrier.tradedangerous_id:
+                self._carrier_live_listing = LiveListing.objects.filter(Q(station_tradedangerous_id=self.carrier.tradedangerous_id) & Q(commodity_id=self.commodity.id)).first()
+            else:
+                self._carrier_live_listing = self.carrier.listings.filter(Q(commodity_id=self.commodity.id)).first()
         return self._carrier_live_listing
 
     @property
@@ -297,10 +299,10 @@ class CarrierMission(models.Model):
     @property
     def progress(self):
         if self.carrier_live_listing:
-            if self.is_loading:
+            if self.is_unloading:
                 return int(self.carrier_live_listing.demand_units/self.units*100)
             else:
-                return 100 - int(self.carrier_live_listing.supply_units/self.units*100)
+                return 100 - int(self.carrier_live_listing.demand_units/self.units*100)
 
         else:
             return 0

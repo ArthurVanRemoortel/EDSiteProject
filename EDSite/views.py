@@ -19,7 +19,7 @@ from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, Sy
 
 
 CURRENT_SYSTEM = System.objects.get(id=16254)  # Sol system
-EDData().start_live_listener()
+# EDData().start_live_listener()
 
 
 def logged_in_user(request):
