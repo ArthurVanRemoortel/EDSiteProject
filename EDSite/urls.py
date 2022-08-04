@@ -1,8 +1,16 @@
-from django.urls import path
+from django.urls import path, include, re_path
+from rest_framework import routers
 
 from . import views
+from . import views_api
+
+router = routers.DefaultRouter()
+router.register('commodities', views_api.CommoditiesViewSet, basename="api-commodities")
+router.register('listings', views_api.ListingsViewSet, basename="api-listings")
 
 urlpatterns = [
+    path('api/', include(router.urls)),
+
     path('', views.index, name='index'),
     path('systems', views.systems, name='systems'),
     path('stations', views.stations, name='stations'),
@@ -23,4 +31,7 @@ urlpatterns = [
     path("planners/trade-routes", views.trade_routes, name="trade-routes"),
     path("planners/carrier-planner", views.carrier_planner, name="carrier-planner"),
     path("planners/carrier-missions", views.carrier_missions, name="carrier-missions"),
+    path("planners/carrier-missions/<str:tab>", views.carrier_missions, name="carrier-missions"),
+
+    # path('api/commodities', views_api.api_commodities, name="api_commodities")
 ]

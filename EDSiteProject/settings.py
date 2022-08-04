@@ -15,6 +15,8 @@ import django
 from django.contrib.auth import get_user_model
 from dotenv import load_dotenv
 from pathlib import Path
+import mimetypes
+mimetypes.add_type("text/css", ".css", True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,7 +45,7 @@ DJANGO_SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 SECRET_KEY = DJANGO_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
@@ -60,8 +62,7 @@ INSTALLED_APPS = [
     'EDSite.apps.EdsiteConfig',
     'sass_processor',
     'compressor',
-    # 'bootstrap5',
-
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
@@ -166,3 +167,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # AUTH_USER_MODEL = django.contrib.auth.get_user_model()
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50
+}

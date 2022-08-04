@@ -1,0 +1,134 @@
+{% load extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carrier Missions</title>
+</head>
+<body>
+<div class="tile is-ancestor mt-4">
+    {% for col_i in grid_cols %}
+        <div class="tile is-4 is-vertical is-parent">
+            {% for mission_row in all_missions %}
+                {% if mission_row|length > col_i %}
+                    {% with mission=mission_row|index:col_i %}
+                        <div class="tile is-child box">
+                            <p class="title"><a href="/stations/{{ mission.carrier.id }}"><span>{{ mission.carrier_name}}</span></a></p>
+                            <p class="subtitle"><a href="/stations/{{ mission.carrier.id }}">{{ mission.carrier.name }}</a><span class="is-white small"> by {{ mission.user.username }}</span></p>
+                            <div class="content">
+                            <article class="media carrier-mission-location">
+                                <figure class="media-left">
+                                    <p class="image is-64x64">
+                                        <img src="https://bulma.io/images/placeholders/128x128.png">
+                                    </p>
+                                </figure>
+                                <div class="media-content mt-1">
+                                    <p class="title is-5 thin pt-1">
+                                        {% with station_type=mission.station.station_type.name %}
+                                            {% include 'EDSite/snippets/station_type.html' %}
+                                        {% endwith %}
+                                        <a href="/stations/{{ mission.station.id}}">{{ mission.station.name}}</a>
+                                    </p>
+                                    <p class="subtitle is-6 thin pt-2">
+{#                                        <span class="icon is-small is-white">#}
+{#                                            <i class="fa-regular fa-circle-question"></i>#}
+{#                                        </span>#}
+                                        <a href="/systems/{{ mission.station.system.id }}">LTT 377</a>
+                                    </p>
+                                </div>
+                            </article>
+                            <table class="table is-fullwidth ">
+                                <tbody>
+                                <tr class="carrier_order_row">
+                                    <th>Commodity</th>
+                                    <td><a href="/commodities/{{ mission.commodity.id }}">{{ mission.commodity.name }}</a> </td>
+                                </tr>
+                                <tr class="carrier_order_row">
+                                    <th>Current Profit</th>
+                                    <td>{{  mission.current_profit }} <span class="cr">CR</span></td>
+                                </tr>
+                                <tr class="carrier_order_row">
+                                    <th>Carrier {% if mission.mode == 'L' %}Demand{% else %}Supply{% endif %}</th>
+                                    <td>{{  mission.carrier_units }}</td>
+                                </tr>
+                                <tr class="carrier_order_row">
+                                    <th>Station {% if mission.mode == 'L' %}Supply{% else %}Demand{% endif %}</th>
+                                    <td>{{ mission.station_units }}</td>
+                                </tr>
+                                <tr class="carrier_order_row">
+                                    <th>Distance</th>
+                                    <td>{{ mission_distances|get_value:mission.id }} Ly</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                            <progress class="progress is-info is-small" value="{{ mission.progress }}" max="100"></progress>
+                        </div>
+
+                        </div>
+                    {% endwith %}
+                {% else %}
+                    <div class="invisible-box tile is-child box invisible-box">
+
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+    {% endfor %}
+    {#    {% for mission_row in all_missions %}#}
+    {#        {% for mission in mission_row %}#}
+    {#        {% endfor %}#}
+    {#    {% endfor %}#}
+    {#    <div class="tile is-4 is-vertical is-parent">#}
+    {#        <div class="tile is-child box">#}
+    {#            <p class="title"><a href="/stations/{{ commodity.best_buy.station.id }}"><span>SR Normandy 404</span></a></p>#}
+    {#            <p class="subtitle"><a href="/stations/{{ commodity.best_buy.station.id }}">K7Q-BQL</a><span class="is-white small"> by 404NameMissing</span></p>#}
+    {#            <div class="content">#}
+    {#                <article class="media carrier-mission-location">#}
+    {#                    <figure class="media-left">#}
+    {#                        <p class="image is-64x64">#}
+    {#                            <img src="https://bulma.io/images/placeholders/128x128.png">#}
+    {#                        </p>#}
+    {#                    </figure>#}
+    {#                    <div class="media-content mt-1">#}
+    {#                        <p class="title is-5 thin">#}
+    {#                            {% with station_type=commodity.best_buy.station.station_type.name %}#}
+    {#                                {% include 'EDSite/snippets/station_type.html' %}#}
+    {#                            {% endwith %}#}
+    {#                            <a href="/stations/{{ commodity.best_buy.station.id }}">Zoline Port</a>#}
+    {#                        </p>#}
+    {#                        <p class="subtitle is-6 thin">#}
+    {#                            <span class="icon is-small is-white">#}
+    {#                                <i class="fa-regular fa-circle-question"></i>#}
+    {#                            </span>#}
+    {#                            <a href="/systems/{{ commodity.best_buy.station.system.id }}">LTT 377</a>#}
+    {#                        </p>#}
+    {#                    </div>#}
+    {#                </article>#}
+    {#                <table class="table is-fullwidth ">#}
+    {#                    <tbody>#}
+    {#                    <tr class="carrier_order_row">#}
+    {#                        <th>Commodity</th>#}
+    {#                        <td><a href="">Bauxite </a> </td>#}
+    {#                    </tr>#}
+    {#                    <tr class="carrier_order_row">#}
+    {#                        <th>Current Profit</th>#}
+    {#                        <td>18000 <span class="cr">CR</span></td>#}
+    {#                    </tr>#}
+    {#                    <tr class="carrier_order_row">#}
+    {#                        <th>Station Units</th>#}
+    {#                        <td>127483</td>#}
+    {#                    </tr>#}
+    {#                    <tr class="carrier_order_row">#}
+    {#                        <th>Distance</th>#}
+    {#                        <td>512 ly</td>#}
+    {#                    </tr>#}
+    {#                    </tbody>#}
+    {#                </table>#}
+    {#                <progress class="progress is-info is-small" value="63" max="100">45%</progress>#}
+    {#            </div>#}
+    {#        </div>#}
+    {#    </div>#}
+</div>
+</body>
+</html>

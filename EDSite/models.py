@@ -1,5 +1,7 @@
-from django.db import models
+import random
 
+from django.db import models
+from django.db.models import Q
 from EDSite.helpers import StationType
 from django.core.cache import cache
 import datetime
@@ -26,13 +28,15 @@ class Commodity(models.Model):
     game_id = models.IntegerField(unique=True, db_index=True)
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
 
-
     best_buy = None
     best_sell = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.update_best_listings()
+
+    class Meta:
+        ordering = ['-id']
 
     @property
     def fullname(self):
@@ -90,6 +94,15 @@ class System(models.Model):
             ("pos_x", "pos_y", "pos_z"),
         ]
 
+    def distance_to(self, other: 'System'):
+        dX = (self.pos_x - other.pos_x)
+        dY = (self.pos_y - other.pos_y)
+        dZ = (self.pos_z - other.pos_z)
+        return ((dX ** 2) + (dY ** 2) + (dZ ** 2)) ** 0.5
+
+    def __str__(self):
+        return self.name + f"({self.id})"
+
 
 class Station(models.Model):
     name = models.CharField(max_length=100)
@@ -106,11 +119,12 @@ class Station(models.Model):
     refuel = models.BooleanField()
     repair = models.BooleanField()
     planetary = models.BooleanField()
-    fleet = models.BooleanField() # TODO: Maybe index?
+    fleet = models.BooleanField()  # TODO: Maybe index?
     odyssey = models.BooleanField()
 
     system = models.ForeignKey(System, on_delete=models.CASCADE, related_name='stations')
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
+
 
     @property
     def station_type(self):
@@ -124,7 +138,7 @@ class Station(models.Model):
     @property
     def fullname(self):
         station_type_str = self.station_type.value if not self.station_type == StationType.STATION else ''
-        return f'{self.name} ({self.system.name})' + (f' ({station_type_str})' if station_type_str else '')
+        return f'{self.name}' + (f' ({station_type_str})' if station_type_str else '')
 
     @property
     def is_large_pad(self) -> bool:
@@ -132,35 +146,38 @@ class Station(models.Model):
 
     @property
     def exporting_listings(self):
-        return self.listings.filter(Q(supply_level__gt=0))
+        return self.listings.filter(Q(supply_units__gt=0))
 
     @property
     def importing_listings(self):
         return self.listings.filter(Q(demand_units__gt=0))
 
     def __str__(self):
-        return f'{self.fullname in self.system.name}'
+        return f'{self.fullname}'
 
 
 class LiveListing(models.Model):
-    commodity: Commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='listings', db_index=True)
-    station: Station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='listings', db_index=True)
+    commodity: Commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='listings')
+    commodity_tradedangerous_id = models.IntegerField()
+    station: Station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='listings')
+    station_tradedangerous_id = models.IntegerField(db_index=True)
     demand_price = models.IntegerField()
     demand_units = models.IntegerField()
-    demand_level = models.IntegerField()
+    # demand_level = models.IntegerField()
     supply_price = models.IntegerField()
     supply_units = models.IntegerField()
-    supply_level = models.IntegerField()
+    # supply_level = models.IntegerField()
     modified = models.DateTimeField()
     from_live = models.BooleanField()
 
     class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['commodity', 'station'], name='Unique combination of commodity and station.')
-        ]
-        # index_together = [
-        #     ("commodity", "station", "modified"),
+        ...
+        # constraints = [
+        #     models.UniqueConstraint(fields=['commodity', 'station'], name='Unique combination of commodity and station.')
         # ]
+        index_together = [
+            ("commodity_id", "station_id"),
+        ]
 
         ordering = ['-id']
 
@@ -171,7 +188,7 @@ class LiveListing(models.Model):
     def is_high_supply(self, minimum=5000):
         return self.supply_units > minimum
 
-    def is_high_demand(self, minimum=5000):
+    def is_high_demand(self, minimum=0):
         return self.demand_units > minimum
 
     @property
@@ -193,15 +210,13 @@ class HistoricListing(models.Model):
     station = models.ForeignKey(Station, on_delete=models.CASCADE)
     demand_price = models.IntegerField()
     demand_units = models.IntegerField()
-    demand_level = models.IntegerField()
     supply_price = models.IntegerField()
     supply_units = models.IntegerField()
-    supply_level = models.IntegerField()
     datetime = models.DateTimeField()
 
     class Meta:
         index_together = [
-            ("commodity", "station"),
+            ("commodity_id", "station_id"),
         ]
 
     @classmethod
@@ -211,31 +226,65 @@ class HistoricListing(models.Model):
             station=live_listing.station,
             demand_price=live_listing.demand_price,
             demand_units=live_listing.demand_units,
-            demand_level=live_listing.demand_level,
             supply_price=live_listing.supply_price,
             supply_units=live_listing.supply_units,
-            supply_level=live_listing.supply_level,
             datetime=live_listing.modified,
         )
 
 
-class CarrierTrade(models.Model):
+class CarrierMission(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
     mode = models.CharField(max_length=1)
-    station = models.ForeignKey(Station, on_delete=models.SET_NULL, null=True)
+    station: Station = models.ForeignKey(Station, on_delete=models.SET_NULL, null=True, related_name=None)
+    carrier: Station = models.ForeignKey(Station, on_delete=models.SET_NULL, null=True, related_name='missions')
+    carrier_name = models.CharField(max_length=128)
     commodity = models.ForeignKey(Commodity, on_delete=models.SET_NULL, null=True)
     units = models.IntegerField()
-    price = models.IntegerField()
+    worker_profit = models.IntegerField()
     active = models.BooleanField()
     date_posted = models.DateTimeField()
-    date_completed = models.DateTimeField()
+    date_completed = models.DateTimeField(null=True)
 
+    _station_live_listing = None
+    _carrier_live_listing = None
 
+    @property
+    def station_live_listing(self) -> LiveListing:
+        if not self._station_live_listing:
+            self._station_live_listing = self.station.listings.filter(Q(commodity_id=self.commodity.id)).first()
+        return self._station_live_listing
+
+    @property
+    def carrier_live_listing(self) -> LiveListing:
+        if not self._carrier_live_listing:
+            self._carrier_live_listing = self.carrier.listings.filter(Q(commodity_id=self.commodity.id)).first()
+        return self._carrier_live_listing
+
+    @property
     def station_units(self):
-        live_listing: LiveListing = self.station.listings.filter(Q(commodity_id=self.commodity.id))
+        if self.is_loading:
+            return self.station_live_listing.supply_units
+        else:
+            return self.station_live_listing.demand_units
 
+    @property
+    def carrier_units(self):
+        if self.carrier_live_listing:
+            if self.is_loading:
+                return self.carrier_live_listing.demand_units
+            else:
+                return self.carrier_live_listing.supply_units
+        else:
+            return 'Unknown'
+
+    @property
     def current_profit(self):
-        ...
+        if self.station_live_listing and self.carrier_live_listing:
+            if self.is_loading:
+                return self.carrier_live_listing.demand_price - self.station_live_listing.supply_price
+            else:
+                return self.station_live_listing.demand_price - self.carrier_live_listing.supply_price
+        return self.worker_profit
 
     @property
     def is_loading(self):
@@ -244,3 +293,14 @@ class CarrierTrade(models.Model):
     @property
     def is_unloading(self):
         return self.mode == "U"
+
+    @property
+    def progress(self):
+        if self.carrier_live_listing:
+            if self.is_loading:
+                return int(self.carrier_live_listing.demand_units/self.units*100)
+            else:
+                return 100 - int(self.carrier_live_listing.supply_units/self.units*100)
+
+        else:
+            return 0

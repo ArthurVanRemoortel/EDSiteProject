@@ -1,0 +1,213 @@
+{% load extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carrier Missions</title>
+</head>
+<body>
+<div class="modal" id="create-mission-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Create Mission</p>
+            <button class="delete" aria-label="close"></button>
+        </header>
+        <form action="{% url 'carrier-missions' tab='my'%}" method="post">
+            {% csrf_token %}
+            <section class="modal-card-body">
+                <div class="field">
+                    <label class="label">Carrier Name</label>
+                    <div class="control has-icons-left has-icons-right">
+                    <span class="icon is-small is-left">
+                      <i class="fas fa-user"></i>
+                    </span>
+                        {{ mission_form.carrier_name }}
+                        <span class="icon is-small is-right">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    </div>
+                    <p class="help is-info"></p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Carrier Code</label>
+                    <div class="control has-icons-left has-icons-right">
+                    <span class="icon is-small is-left">
+                      <i class="fas fa-user"></i>
+                    </span>
+                        {{ mission_form.carrier_code }}
+                        <span class="icon is-small is-right">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    </div>
+                    <p class="help is-info"></p>
+                </div>
+
+                <div class="field">
+                    <label class="label">Username</label>
+                    <div class="control has-icons-left has-icons-right">
+                        {{ mission_form.username }}
+                        <span class="icon is-small is-left">
+                      <i class="fas fa-user"></i>
+                    </span>
+                        <span class="icon is-small is-right">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Mission Type</label>
+                    <div class="select-wide select is-primary">
+                        {{ mission_form.mission_type }}
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Commodity</label>
+                    <div class="control has-icons-left has-icons-right">
+                        {{ mission_form.commodity }}
+                        <span class="icon is-small is-left">
+                      <i class="fas fa-user"></i>
+                    </span>
+                        <span class="icon is-small is-right">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Station</label>
+                    <div class="control has-icons-left has-icons-right">
+                        {{ mission_form.station }}
+                        <span class="icon is-small is-left">
+                      <i class="fas fa-user"></i>
+                    </span>
+                        <span class="icon is-small is-right">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">System</label>
+                    <div class="control has-icons-left has-icons-right">
+                        {{ mission_form.system }}
+                        <span class="icon is-small is-left">
+                      <i class="fas fa-user"></i>
+                    </span>
+                        <span class="icon is-small is-right">
+                      <i class="fas fa-check"></i>
+                    </span>
+                    </div>
+                </div>
+                <div class="field field-body">
+                    <div class="field">
+                        <div class="control">
+                            <label class="label">Worker Profit</label>
+                            <div class="control has-icons-left">
+                                {{ mission_form.worker_profit }}
+                                <span class="icon is-small is-left">
+                          <i class="fas fa-user"></i>
+                        </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <label class="label">Unit Price</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="text" id="unit_price_field" placeholder="" disabled readonly>
+                                <span class="icon is-small is-left">
+                              <i class="fas fa-user"></i>
+                            </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="field field-body">
+                    <div class="field">
+                        <div class="control">
+                            <label class="label">Units</label>
+                            <div class="control has-icons-left">
+                                {{ mission_form.units }}
+                                <span class="icon is-small is-left">
+                          <i class="fas fa-user"></i>
+                        </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <div class="control">
+                            <label class="label">Total Price</label>
+                            <div class="control has-icons-left">
+                                <input class="input" type="text" id="total_price_field" placeholder="" disabled readonly>
+                                <span class="icon is-small is-left">
+                              <i class="fas fa-user"></i>
+                            </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-success">Save</button>
+                <button type="button" class="button is-dark">Cancel</button>
+            </footer>
+        </form>
+
+    </div>
+</div>
+
+<button class="button is-primary js-modal-trigger" data-target="create-mission-modal">Create Mission</button>
+
+</body>
+</html>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Functions to open and close a modal
+        function openModal($el) {
+            $el.classList.add('is-active');
+        }
+
+        function closeModal($el) {
+            $el.classList.remove('is-active');
+        }
+
+        function closeAllModals() {
+            (document.querySelectorAll('.modal') || []).forEach(($modal) => {
+                closeModal($modal);
+            });
+        }
+
+        // Add a click event on buttons to open a specific modal
+        (document.querySelectorAll('.js-modal-trigger') || []).forEach(($trigger) => {
+            const modal = $trigger.dataset.target;
+            const $target = document.getElementById(modal);
+
+            $trigger.addEventListener('click', () => {
+                openModal($target);
+            });
+        });
+
+        // Add a click event on various child elements to close the parent modal
+        (document.querySelectorAll('.modal-background, .modal-close, .modal-card-head .delete, .modal-card-foot .button') || []).forEach(($close) => {
+            const $target = $close.closest('.modal');
+
+            $close.addEventListener('click', () => {
+                closeModal($target);
+            });
+        });
+
+        // Add a keyboard event to close all modals
+        document.addEventListener('keydown', (event) => {
+            const e = event || window.event;
+
+            if (e.keyCode === 27) { // Escape key
+                closeAllModals();
+            }
+        });
+    });
+</script>

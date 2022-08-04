@@ -1,13 +1,15 @@
 {% load sass_tags %}
+{% load extras %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    {#    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">#}
-    {#    <link rel="stylesheet" href="https://unpkg.com/bulmaswatch/darkly/bulmaswatch.min.css">#}
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.1.1/css/all.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" integrity="sha512-894YE6QWD5I59HgZOGReFYm4dnWc1Qt5NtvYSaNcOP+u1T9qYdvdihz0PPSiiqn/+/3e7Jo4EaG7TubfWGUrMQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.js"> </script>
+
+    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
     {% load static %}
     <link href="{% sass_src 'EDSite/bulma.sass' %}" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="{% static 'EDSite/style.css' %}">
@@ -187,7 +189,6 @@
 
 </script>
 {% block javascript %}
-
 {% endblock javascript %}
 </body>
 </html>

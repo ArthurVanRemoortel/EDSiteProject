@@ -1,3 +1,5 @@
+import codecs
+import csv
 import linecache
 import os
 from threading import Lock, Thread
@@ -6,6 +8,9 @@ import datetime as datetime
 import tracemalloc
 from collections import Counter
 import gc
+from urllib import request
+
+from tqdm import tqdm
 
 
 class SingletonMeta(type):
@@ -105,3 +110,58 @@ def chunked_queryset(queryset, chunk_size=10000):
         yield queryset.filter(pk__gte=start_pk, pk__lt=end_pk)
         start_pk = end_pk
     yield queryset.filter(pk__gte=start_pk)
+
+
+def list_to_columns(lst, cols):
+    result = []
+    for i, value in enumerate(lst):
+        if i % cols == 0:
+            result.append([])
+        result[-1].append(value)
+    return result
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def chunks_no_overlap(lst, n):
+    result = [[]]
+    i = 0
+    prev = None
+    for value in lst:
+        if i >= n and value != prev:
+            result.append([])
+            i = 0
+        result[-1].append(value)
+        i += 1
+        prev = value
+    return result
+
+
+def update_item_dict():
+    # We'll use this to get the fdev_id from the 'symbol', AKA commodity['name'].lower()
+    db_name = dict()
+    edcd_source = 'https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv'
+    edcd_csv = request.urlopen(edcd_source)
+    edcd_dict = csv.DictReader(codecs.iterdecode(edcd_csv, 'utf-8'))
+    for line in iter(edcd_dict):
+        db_name[line['symbol'].lower()] = line['id']
+
+    # Rare items are in a different file.
+    edcd_rare_source = 'https://raw.githubusercontent.com/EDCD/FDevIDs/master/rare_commodity.csv'
+    edcd_rare_csv = request.urlopen(edcd_rare_source)
+    edcd_rare_dict = csv.DictReader(codecs.iterdecode(edcd_rare_csv, 'utf-8'))
+    for line in iter(edcd_rare_dict):
+        db_name[line['symbol'].lower()] = line['id']
+
+    # We'll use this to get the item_id from the fdev_id because it's faster than a database lookup.
+    item_ids = dict()
+
+    # Rare items don't have an EDDB item_id, so we'll just store them by the fdev_id
+    for line in iter(edcd_rare_dict):
+        item_ids[line['id']] = line['id']
+
+    return db_name, item_ids

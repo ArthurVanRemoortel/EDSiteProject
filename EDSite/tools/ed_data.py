@@ -1,14 +1,16 @@
-import gc
-import linecache
-import os
+import json
+import random
+import threading
 import time
-import tracemalloc
+import zlib
+from collections import defaultdict, deque, namedtuple
 from datetime import datetime, timezone, timedelta
 from pprint import pprint
-from typing import Any
 
-import django
+import zmq
+from django import db
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q
 from tqdm import tqdm
 from tradedangerous import tradedb, commands
@@ -20,18 +22,32 @@ from tradedangerous.tradedb import RareItem as TDIRareItem
 from tradedangerous.tradedb import Category as TDCategory
 
 from EDSite.helpers import SingletonMeta, EDDatabaseState, make_timezone_aware, StationType, difference_percent, \
-    display_top_memory, queryset_iterator, chunked_queryset
+    display_top_memory, queryset_iterator, chunked_queryset, chunks, chunks_no_overlap, update_item_dict
 
-from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing
+from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing, \
+    CarrierMission
 from django.core.cache import cache
+
+from EDSite.tools.data_listener import LiveListener
 
 
 class EDData(metaclass=SingletonMeta):
     td_database_status: EDDatabaseState = EDDatabaseState.UNKNOWN
+    system_names = {}
+    station_names_dict = {}
+    commodity_names = {}
 
     def __init__(self) -> None:
         self.last_update = make_timezone_aware(datetime.now() - timedelta(days=4))
-        # self.redis = redis.Redis(host='localhost', port=6379, db=0)
+
+        self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
+        self.system_names = {system.name.lower(): system for system in System.objects.all()}
+        self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
+        self.live_listener = LiveListener(ed_data=self)
+
+    def start_live_listener(self):
+        self.live_listener.start_background()
+
 
     @property
     def tdb(self, *args) -> tradedb.TradeDB:
@@ -66,7 +82,7 @@ class EDData(metaclass=SingletonMeta):
         return tsc if tsc > 0 else None
 
     def update_tradedangerous_database(self):
-        print("Updating data...")
+        self.live_listener.pause()
         first_time = False
         try:
             trade_data = self.check_tradedangerous_db()
@@ -90,6 +106,14 @@ class EDData(metaclass=SingletonMeta):
             tdb.close()
         if results:
             results.render()
+
+    def get_carriers_of_interest(self) -> {int: Station}:
+        mission: CarrierMission
+        return {mission.carrier.id: mission.carrier for mission in CarrierMission.objects.all()}
+
+    def get_stations_of_interest(self) -> {int: Station}:
+        mission: CarrierMission
+        return {mission.station.id: mission.station for mission in CarrierMission.objects.all()}
 
     def update_local_systems(self, tdb=None):
         if not tdb:
@@ -212,7 +236,7 @@ class EDData(metaclass=SingletonMeta):
         print('Updating rares...')
         td_rare: TDIRareItem
         for td_rare in tdb.rareItemByID.values():
-            if not Rare.objects.filter(tradedangerous_id=td_rare.ID).exists():
+            if not Rare.objects.filter(name=td_rare.dbname).exists():
                 rare = Rare(
                     tradedangerous_id=td_rare.ID,
                     name=td_rare.dbname,
@@ -225,48 +249,21 @@ class EDData(metaclass=SingletonMeta):
                 rare.save()
                 print(f"Adding rare: {rare}")
 
-    def update_local_listings(self, tdb=None, full_update=True):
-        changeable_attributes = ['demand_price', 'demand_units', 'demand_level', 'supply_price', 'supply_units',
-                                 'supply_level', 'modified']
+    def update_local_listings2(self, tdb=None, full_update=True):
+        changeable_attributes = ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified']
         if not tdb:
             tdb = self.tdb
-        # TODO: Uses 3GB RAM. Split in multiple parts.
-        if full_update:
-            td_item_station_query = list(tdb.cur.execute(
-                """
-                    SELECT *
-                    FROM  StationItem
-                """
-            ))
-        else:
-            td_item_station_query = list(tdb.cur.execute(
-                """
-                    SELECT *
-                    FROM  StationItem WHERE from_live = 1
-                """
-            ))
         stations: {int: Station} = {station.tradedangerous_id: station for station in Station.objects.filter(~Q(item_count=0)).only('id', 'pad_size', 'fleet', 'tradedangerous_id').all().iterator()}
         commodities_td_to_django_ids: {int: int} = {commodity.tradedangerous_id: commodity.id for commodity in
                                                     Commodity.objects.only('id', 'tradedangerous_id').all().iterator()}
-        total_td_listings: int = len(td_item_station_query)
-        existing_live_listings = {}
-        print('starting LL query...')
+        carriers_of_interest: {int: Station} = self.get_carriers_of_interest()
+        print("Carriers of interest: ", carriers_of_interest)
+        print("Starting TD query...")
         t0 = time.time()
-        paginator = Paginator(LiveListing.objects.only('station_id', 'commodity_id',
-                                                        'modified').all(), 1000000)
-        for i in range(1, paginator.num_pages+1):
-            print("Chunk", i)
-            # django.db.reset_queries()
-            for ll in paginator.page(i).object_list:
-                existing_live_listings[(ll.station_id, ll.commodity_id)] = ll
-        print(f'Queried LiveListing in {time.time() - t0} seconds.')
-
-        # for i, ll in enumerate(LiveListing.objects.only('station_id', 'commodity_id',
-        #                                                 'modified').iterator()):
-        #     if i % 10000 == 0:
-        #         django.db.reset_queries()
-        #     existing_live_listings[(ll.station_id, ll.commodity_id)] = ll
-
+        # min_station_id, max_station_id = list(tdb.cur.execute('SELECT (min("station_id"), max("station_id")) FROM StationItem'))
+        td_listings_station_ids = sorted([r[0] for r in tdb.cur.execute('SELECT "station_id" FROM StationItem')])
+        TD_PART_SIZE = 200000
+        print("-----------")
         new_listings = []
         total_new_listings = 0
         new_historic_listings = []
@@ -274,72 +271,97 @@ class EDData(metaclass=SingletonMeta):
         ignored_historic_listings = 0
         updated_listings = []
         total_updated_listings = 0
-
-        for i, td_item_station_row in enumerate(tqdm(td_item_station_query)):
-            station_td_id, item_td_id, demand_price, demand_units, demand_level, supply_price, supply_units, supply_level, modified_str, from_live = td_item_station_row
-            modified = make_timezone_aware(datetime.strptime(modified_str, "%Y-%m-%d %H:%M:%S"))
-            try:
-                station: Station = stations[station_td_id]
-            except KeyError:
-                # Station does not exist in db.
-                # print(f"Station TD id {station_td_id} does not exist in django database.")
-                station = None
-            if station and not station.fleet:
-                station_id = station.id
-                com_id = commodities_td_to_django_ids[item_td_id]
-                try:
-                    existing_live_listing = existing_live_listings[(station_id, com_id)]
-                    if modified != existing_live_listing.modified:
-                        # existing_live_listing: LiveListing = LiveListing.objects.get(station_id=station_id,
-                        #                                                              commodity_id=com_id)
-                        if (difference_percent(existing_live_listing.demand_price, demand_price) > 10
-                                or difference_percent(existing_live_listing.supply_price, supply_price) > 10):
-                            new_historic_listings.append(HistoricListing.from_live(existing_live_listing))
-                            total_new_historic_listings += 1
-                        else:
-                            ignored_historic_listings += 1
-                        existing_live_listing.demand_price = demand_price
-                        existing_live_listing.demand_units = demand_units
-                        existing_live_listing.demand_level = demand_level
-                        existing_live_listing.supply_price = supply_price
-                        existing_live_listing.supply_units = supply_units
-                        existing_live_listing.supply_level = supply_level
-                        existing_live_listing.modified = modified
-                        updated_listings.append(existing_live_listing)
-                        total_updated_listings += 1
-                except KeyError:
-                    # live_listing_date = None
-                    live_listing = LiveListing(
-                        commodity_id=com_id,
-                        station_id=station_id,
-                        demand_price=demand_price,
-                        demand_units=demand_units,
-                        demand_level=demand_level,
-                        supply_price=supply_price,
-                        supply_units=supply_units,
-                        supply_level=supply_level,
-                        modified=modified,
-                        from_live=from_live
-                    )
-                    new_listings.append(live_listing)
-                    total_new_listings += 1
+        total_updated_carriers = 0
+        # station_ids_part_start = min_station_id
+        for station_ids_chunk in tqdm(chunks_no_overlap(td_listings_station_ids, TD_PART_SIZE)):
+            min_station_td_id, max_station_td_id = min(station_ids_chunk), max(station_ids_chunk)
+            t1 = time.time()
+            if full_update:
+                td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
             else:
-                # Special case for fleet carriers.
-                ...
+                td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
+            existing_live_listings = {(ll.station_id, ll.commodity_id): ll for ll in LiveListing.objects.filter(Q(station_tradedangerous_id__gte=min_station_td_id) & Q(station_tradedangerous_id__lte=max_station_td_id)).all()}  # Problem
+            db.reset_queries()
+            for td_item_station_row in td_row_part:
+                station_td_id, item_td_id, demand_price, demand_units, _, supply_price, supply_units, _, modified_str, from_live = td_item_station_row
+                modified = make_timezone_aware(datetime.strptime(modified_str, "%Y-%m-%d %H:%M:%S"))
+                try:
+                    station: Station = stations[station_td_id]
+                except KeyError:
+                    # Station does not exist in db.
+                    # print(f"Station TD id {station_td_id} does not exist in django database.")
+                    station = None
+                if station:
+                    if station.fleet and station.id not in carriers_of_interest:
+                        continue
+                    if station.fleet:
+                        total_updated_carriers += 1
+                    station_id = station.id
+                    com_id = commodities_td_to_django_ids[item_td_id]
+                    try:
+                        existing_live_listing = existing_live_listings[(station_id, com_id)]
+                        if modified != existing_live_listing.modified:
+                            if (difference_percent(existing_live_listing.demand_price, demand_price) > 10
+                                    or difference_percent(existing_live_listing.supply_price, supply_price) > 10):
+                                new_historic_listings.append(HistoricListing.from_live(existing_live_listing))
+                                total_new_historic_listings += 1
+                            else:
+                                ignored_historic_listings += 1
+                            existing_live_listing.demand_price = demand_price
+                            existing_live_listing.demand_units = demand_units
+                            # existing_live_listing.demand_level = demand_level
+                            existing_live_listing.supply_price = supply_price
+                            existing_live_listing.supply_units = supply_units
+                            # existing_live_listing.supply_level = supply_level
+                            existing_live_listing.modified = modified
+                            updated_listings.append(existing_live_listing)
+                            total_updated_listings += 1
+                    except KeyError as e:
+                        live_listing = LiveListing(
+                            commodity_id=com_id,
+                            commodity_tradedangerous_id=item_td_id,
+                            station_id=station_id,
+                            station_tradedangerous_id=station_td_id,
+                            demand_price=demand_price,
+                            demand_units=demand_units,
+                            # demand_level=demand_level,
+                            supply_price=supply_price,
+                            supply_units=supply_units,
+                            # supply_level=supply_level,
+                            modified=modified,
+                            from_live=from_live
+                        )
+                        new_listings.append(live_listing)
+                        total_new_listings += 1
+                else:
+                    # Station not found.
+                    ...
+            # print(f'TD Part took {time.time() - t1}')
+            # print()
 
-            if (i > 0 and i % 1000000 == 0) or i == total_td_listings-1:
-                if i == total_td_listings-1:
-                    print("This is the last iteration at", i)
-                print(f"Intermediate save: New {len(new_listings)}, {len(updated_listings)}, {len(new_historic_listings)}, {ignored_historic_listings}")
-                if len(new_listings) > 1000:
-                    LiveListing.objects.bulk_create(new_listings, batch_size=10000)
-                    new_listings = []
-                if len(new_historic_listings) > 1000:
-                    HistoricListing.objects.bulk_create(new_historic_listings, batch_size=10000)
-                    new_historic_listings = []
-                if len(updated_listings) > 1000:
-                    LiveListing.objects.bulk_update(updated_listings, changeable_attributes, batch_size=10000)
-        print(f"Done updating listings. {total_new_listings} new, {total_updated_listings} updated, {total_new_historic_listings} historic added, {ignored_historic_listings} historic ignored.")
+        # print(f'Queried TD in {time.time() - t0} seconds.')
+
+        print(f"New {len(new_listings)}, {len(updated_listings)}, {len(new_historic_listings)}, {ignored_historic_listings}")
+        if new_listings:
+            print("Saving new listings")
+            for chunk in tqdm(list(chunks(new_listings, 200000))):
+                LiveListing.objects.bulk_create(list(chunk))
+                db.reset_queries()
+        del new_listings
+
+        if new_historic_listings:
+            print("Saving new historic listings")
+            for chunk in tqdm(list(chunks(new_historic_listings, 200000))):
+                HistoricListing.objects.bulk_create(list(chunk))
+                db.reset_queries()
+        del new_historic_listings
+        if updated_listings:
+            print("Saving updated listings")
+            for chunk in tqdm(list(chunks(updated_listings, 20000))):
+                LiveListing.objects.bulk_update(list(chunk), changeable_attributes)
+                db.reset_queries()
+        del updated_listings
+        print(f"Done updating listings. {total_new_listings} new, {total_updated_listings} updated ({total_updated_carriers} FC listings), {total_new_historic_listings} historic added, {ignored_historic_listings} historic ignored.")
 
     def update_cache(self):
         t0 = time.time()
@@ -347,7 +369,7 @@ class EDData(metaclass=SingletonMeta):
         best_buys = {commodity.id: None for commodity in commodities}
         best_sells = {commodity.id: None for commodity in commodities}
         live_listing: LiveListing
-        for live_listing in tqdm(LiveListing.objects.filter(Q(supply_level__gt=0) | Q(demand_level__gt=0)).iterator()):
+        for live_listing in tqdm(LiveListing.objects.filter(~Q(supply_units=0) & ~Q(demand_units=0)).iterator()):
             if live_listing.is_recently_modified:
                 if live_listing.is_high_supply() and 0 < live_listing.supply_price and live_listing.is_recently_modified:
                     if not best_sells[live_listing.commodity_id] or best_sells[live_listing.commodity_id].supply_price > live_listing.supply_price:
@@ -368,6 +390,7 @@ class EDData(metaclass=SingletonMeta):
 
     def update_local_database(self, data=True, update_systems=True, update_stations=True, update_commodities=True,
                               update_listings=True, update_cache=True, full_listings_update=True):
+        self.live_listener.pause()
         t0 = time.time()
         tdb = self.tdb
         if data:
@@ -388,13 +411,15 @@ class EDData(metaclass=SingletonMeta):
             print(f"Updating commodities took {time.time() - t4} seconds")
         if update_listings:
             t5 = time.time()
-            self.update_local_listings(tdb, full_update=full_listings_update)
+            self.update_local_listings2(tdb, full_update=full_listings_update)
+            # self.update_local_listings(tdb, full_update=full_listings_update)
             print(f"Updating listings took {time.time() - t5} seconds")
         if update_cache:
             t6 = time.time()
             self.update_cache()
             print(f"Updating cache took {time.time() - t6} seconds")
         print(f"Updating entire database took {time.time() - t0} seconds")
+        self.live_listener.unpause()
 
     def avg_selling_items(self):
         return self.tdb.getAverageSelling()

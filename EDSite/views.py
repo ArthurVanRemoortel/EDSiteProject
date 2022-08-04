@@ -1,3 +1,4 @@
+import datetime
 from pprint import pprint
 
 from django.contrib import messages
@@ -11,14 +12,25 @@ from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 
 # import EDSite.ed_data
-from EDSite.ed_data import EDData
-from EDSite.forms import CommodityForm, SignupForm, LoginForm
-from EDSite.models import CommodityCategory, Commodity, Station, LiveListing
+from EDSite.tools.ed_data import EDData
+from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionForm
+from EDSite.helpers import make_timezone_aware, list_to_columns
+from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, System, CarrierMission
+
+
+CURRENT_SYSTEM = System.objects.get(id=16254)  # Sol system
+EDData().start_live_listener()
+
+
+def logged_in_user(request):
+    return request.user if not request.user.is_anonymous else None
 
 
 def base_context(request) -> {}:
     return {
-        'current_user': request.user if not request.user.is_anonymous else None
+        'current_user': logged_in_user(request),
+        'current_system': CURRENT_SYSTEM,
+        'current_carrier': ('Normandy SR-404', 'K7Q-BQL')
     }
 
 
@@ -111,6 +123,90 @@ def rares(request):
     return render(request, 'EDSite/rares.html', base_context(request) | context)
 
 
+def carrier_planner(request):
+    return redirect("index")
+
+
+def carrier_missions(request, tab=None):
+    base_context_local = base_context(request)
+    tab = tab if tab else 'all'
+    context = {
+        'tab': tab,
+        'all_missions': [],
+        'my_missions': [],
+        'grid_cols': range(3)
+    }
+    if tab == "all":
+        missions: [CarrierMission] = CarrierMission.objects.all()
+        context['all_missions'] = list_to_columns(missions, 3)
+        context['mission_distances'] = {mission.id: int(mission.station.system.distance_to(CURRENT_SYSTEM)) for mission in missions}
+
+    elif tab == "my":
+        context['my_missions'] = [[1, 2, 3], [1]]
+        if request.method == 'GET':
+            mission_form = CarrierMissionForm()
+            if base_context_local['current_carrier']:
+                mission_form.fields['carrier_name'].initial = base_context_local['current_carrier'][0]
+                mission_form.fields['carrier_code'].initial = base_context_local['current_carrier'][1]
+            if base_context_local['current_user']:
+                mission_form.fields['username'].initial = base_context_local['current_user'].username
+            if base_context_local['current_system']:
+                system: System = base_context_local['current_system']
+                mission_form.fields['system'].initial = system.name
+
+            mission_form.fields['system'].initial = "Ba Po"
+            mission_form.fields['station'].initial = "Lewitt Works"
+            mission_form.fields['commodity'].initial = "Bauxite"
+            mission_form.fields['worker_profit'].initial = 12000
+            mission_form.fields['units'].initial = 15000
+
+        else:
+            mission_form = CarrierMissionForm(request.POST)
+            if mission_form.is_valid():
+                carrier_name_raw = mission_form.data['carrier_name']
+                carrier_code_raw = mission_form.data['carrier_code']
+                username_raw = mission_form.data['username']
+                system_raw = mission_form.data['system']
+                station_raw = mission_form.data['station']
+                commodity_raw = mission_form.data['commodity']
+                worker_profit_raw = mission_form.data['worker_profit']
+                mission_type_raw = mission_form.data['mission_type']
+                units_raw = mission_form.data['units']
+
+                station = Station.objects.get(Q(name=station_raw) & Q(system__name=system_raw))
+                carrier = Station.objects.get(Q(name=carrier_code_raw))
+                commodity = Commodity.objects.get(name=commodity_raw)
+                current_user = logged_in_user(request)
+
+                if current_user and commodity and station:
+                    carrier_mission = CarrierMission(
+                        user=current_user,
+                        mode=mission_type_raw,
+                        station=station,
+                        carrier=carrier,
+                        carrier_name=carrier_name_raw,
+                        commodity=commodity,
+                        units=units_raw,
+                        worker_profit=worker_profit_raw,
+                        active=True,
+                        date_posted=make_timezone_aware(datetime.datetime.now()),
+                        date_completed=None,
+                    )
+                    carrier_mission.save()
+                else:
+                    print("Something was None")
+            else:
+                print("CarrierMissionForm is not valid:", mission_form.data)
+                print(mission_form.errors)
+        context['mission_form'] = mission_form
+
+    return render(request, 'EDSite/carrier_missions/carrier_missions_base.html', base_context_local | context)
+
+
+def trade_routes(request):
+    return redirect("index")
+
+
 @csrf_exempt
 def debug_reload(request):
     print("Going to update data.")
@@ -143,7 +239,7 @@ def debug_update_database(request, mode='False'):
 
 def signup_view(request):
     if request.method == "POST":
-        form = SignupForm(request, request.POST)
+        form = SignupForm(request.POST)
         if form.is_valid():
             # user = form.save()
             username = form.cleaned_data.get('username')
@@ -163,7 +259,6 @@ def signup_view(request):
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request, request.POST)
-        pprint(request.POST)
         if form.is_valid():
             username = form.cleaned_data.get('username')
             email = form.cleaned_data.get('email')
@@ -188,14 +283,3 @@ def logout_view(request):
     logout(request)
     return redirect("index")
 
-
-def carrier_planner(request):
-    return redirect("index")
-
-
-def carrier_missions(request):
-    return redirect("index")
-
-
-def trade_routes(request):
-    return redirect("index")

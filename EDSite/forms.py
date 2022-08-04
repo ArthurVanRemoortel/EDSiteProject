@@ -18,19 +18,16 @@ LANDING_PAD_CHOICES = [
 
 
 class CommodityForm(forms.Form):
-
     reference_system = forms.CharField(
         widget=forms.TextInput(
             attrs={'class': 'input'}
         ),
         required=False,
     )
-
     buy_or_sell = forms.ChoiceField(
         required=False,
         choices=[('buy', 'Buy'), ('sell', 'Sell')],
     )
-
     include_odyssey = forms.ChoiceField(
         widget=forms.Select(
             attrs={
@@ -40,22 +37,18 @@ class CommodityForm(forms.Form):
         required=False,
         choices=YES_NO_CHOICES,
     )
-
     include_fleet_carriers = forms.ChoiceField(
         required=False,
         choices=YES_NO_CHOICES,
     )
-
     include_planetary = forms.ChoiceField(
         required=False,
         choices=YES_NO_CHOICES,
     )
-
     landing_pad_size = forms.ChoiceField(
         required=False,
         choices=LANDING_PAD_CHOICES,
     )
-
     minimum_units = forms.CharField(
         widget=forms.TextInput(
             attrs={
@@ -67,42 +60,59 @@ class CommodityForm(forms.Form):
     )
 
 
-class SignupForm(UserCreationForm):
+class CarrierMissionForm(forms.Form):
+    carrier_name = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input', 'id': 'carrier_field'},
+        ),
+        required=True,
+    )
+    carrier_code = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input', 'id': 'carrier_code_field'},
+        ),
+        required=True,
+    )
     username = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'readonly': True, 'id': 'username_field'},
         ),
         required=True,
     )
-    email = forms.EmailField(
+    mission_type = forms.ChoiceField(
+        required=True,
+        choices=[('L', 'Loading'), ('U', 'Unloading')],
+    )
+    commodity = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'id': 'commodity_field'},
         ),
         required=True,
     )
-    password1 = forms.CharField(
-        widget=PasswordInput(
-            attrs={'class': 'input'}
+    station = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input', 'id': 'station_field'},
         ),
         required=True,
     )
-    password2 = forms.CharField(
-        widget=PasswordInput(
-            attrs={'class': 'input'}
+    system = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input', 'id': 'system_field'},
         ),
         required=True,
     )
-
-    class Meta:
-        model = User
-        fields = ("username", "email", "password1", "password2")
-
-    def save(self, commit=True):
-        user = super(SignupForm, self).save(commit=False)
-        user.email = self.cleaned_data['email']
-        if commit:
-            user.save()
-        return user
+    worker_profit = forms.CharField(
+        widget=forms.NumberInput(
+            attrs={'class': 'input', 'id': 'worker_profit_field'},
+        ),
+        required=True,
+    )
+    units = forms.CharField(
+        widget=forms.NumberInput(
+            attrs={'class': 'input', 'id': 'units_field'},
+        ),
+        required=True,
+    )
 
 
 class SignupForm(UserCreationForm):
