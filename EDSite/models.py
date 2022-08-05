@@ -8,6 +8,8 @@ import datetime
 from django.conf import settings
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 
+IS_LIVE_MINUTES = 60
+
 class CommodityCategory(models.Model):
     name = models.CharField(max_length=100)
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
@@ -109,8 +111,8 @@ class Station(models.Model):
     ls_from_star = models.IntegerField()
     pad_size = models.CharField(max_length=1)
     item_count = models.IntegerField()
-    data_age_days = models.FloatField()
-
+    # data_age_days = models.FloatField()
+    modified = models.DateTimeField(null=True)
     market = models.BooleanField()
     black_market = models.BooleanField()
     shipyard = models.BooleanField()
@@ -152,12 +154,16 @@ class Station(models.Model):
     def importing_listings(self):
         return self.listings.filter(Q(demand_units__gt=0))
 
+    @property
+    def is_live(self):
+        return self.data_age_days != -1 and self.data_age_days * 24 * 60 < IS_LIVE_MINUTES
+
     def __str__(self):
         return f'{self.fullname}'
 
 
 class LiveListing(models.Model):
-    objects = BulkUpdateOrCreateQuerySet.as_manager()
+    # objects = BulkUpdateOrCreateQuerySet.as_manager()
 
     commodity: Commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='listings')
     commodity_tradedangerous_id = models.IntegerField()
@@ -306,3 +312,7 @@ class CarrierMission(models.Model):
 
         else:
             return 0
+
+    @property
+    def is_live(self):
+        return self.carrier.is_live# or self.station.is_live

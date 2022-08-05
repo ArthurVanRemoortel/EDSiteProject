@@ -9,6 +9,8 @@ from datetime import datetime
 from pprint import pprint
 
 import zmq
+from django.db import transaction
+from django.forms import model_to_dict
 
 from EDSite.helpers import make_timezone_aware, difference_percent
 from EDSite.models import Commodity, LiveListing, Station, HistoricListing
@@ -145,9 +147,10 @@ class LiveListener:
             if to_update_listings:
                 t0 = time.time()
                 # print(f"Should update {len(to_update_listings)} live_listings")
-                LiveListing.objects.bulk_update(list(to_update_listings),
-                                                ['demand_price', 'demand_units', 'supply_price', 'supply_units',
-                                                 'modified', 'from_live'])
+                with transaction.atomic():
+                    for ll in to_update_listings:
+                        # LiveListing.objects.filter(id=ll.id).update(['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live'])
+                        LiveListing.objects.filter(id=ll.id).update(**{key: value for key, value in model_to_dict(ll).items() if key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']})
                 # print(f"Took {time.time() - t0}")
                 to_update_listings = []
             if new_listings:
@@ -157,7 +160,10 @@ class LiveListener:
                 # print(f"Took {time.time() - t0}")
                 new_listings = []
             if to_update_stations:
-                Station.objects.bulk_update(list(to_update_stations), ['system_id'])
+                with transaction.atomic():
+                    for station in to_update_stations:
+                        Station.objects.filter(id=station.id).update(system_id=station.system_id)
+                # Station.objects.bulk_update(list(to_update_stations), ['system_id'])
                 # print(f"Took {time.time() - t0}")
                 # print(f"Updated {len(to_update_stations)} stations.")
                 to_update_stations = []
@@ -195,7 +201,7 @@ class LiveListener:
                         system = self.ed_data.system_names.get(system_name)
                         if system:
                             station.system_id = system.id
-                            to_update_stations.append(station)
+                            to_update_stations.append(station),# tOFO
                             print(f'Changed the station {station} to system {system}')
                         else:
                             pass

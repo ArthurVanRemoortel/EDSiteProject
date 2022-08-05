@@ -4,8 +4,9 @@ import threading
 import time
 import zlib
 from collections import defaultdict, deque, namedtuple
-from datetime import datetime, timezone, timedelta
+import datetime
 from pprint import pprint
+from django.forms.models import model_to_dict
 
 import zmq
 from django import db
@@ -38,7 +39,7 @@ class EDData(metaclass=SingletonMeta):
     commodity_names = {}
 
     def __init__(self) -> None:
-        self.last_update = make_timezone_aware(datetime.now() - timedelta(days=4))
+        self.last_update = make_timezone_aware(datetime.datetime.now() - datetime.timedelta(days=4))
         # self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
         # self.system_names = {system.name.lower(): system for system in System.objects.all()}
         # self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
@@ -84,7 +85,7 @@ class EDData(metaclass=SingletonMeta):
         return tsc if tsc > 0 else None
 
     def update_tradedangerous_database(self):
-        self.live_listener.pause()
+        # self.live_listener.pause()
         first_time = False
         try:
             trade_data = self.check_tradedangerous_db()
@@ -154,6 +155,10 @@ class EDData(metaclass=SingletonMeta):
                 station: Station = stations[td_station.ID]
             except KeyError:
                 station = None
+            if td_station.dataAge:
+                modified = datetime.datetime.now(tz=datetime.timezone.utc) - datetime.timedelta(days=td_station.dataAge)
+            else:
+                modified = None
             if not station:
                 station = Station(
                     tradedangerous_id=td_station.ID,
@@ -161,7 +166,8 @@ class EDData(metaclass=SingletonMeta):
                     ls_from_star=td_station.lsFromStar,
                     pad_size=td_station.maxPadSize,
                     item_count=td_station.itemCount,
-                    data_age_days=td_station.dataAge if td_station.dataAge else -1,
+                    # data_age_days=td_station.dataAge if td_station.dataAge else -1,
+                    modified=modified,
                     market=td_station.market == "Y",
                     black_market=td_station.blackMarket == "Y",
                     shipyard=td_station.shipyard == "Y",
@@ -178,10 +184,9 @@ class EDData(metaclass=SingletonMeta):
             else:
                 # (station.data_age_days == -1 and td_station.dataAge)
                 try:
-                    if station.item_count != td_station.itemCount or (td_station.dataAge and abs(
-                            station.data_age_days - td_station.dataAge) < 0.1 ):
+                    if station.item_count != td_station.itemCount or modified != station.modified:
                         station.item_count = td_station.itemCount
-                        station.data_age_days = td_station.dataAge if td_station.dataAge else -1
+                        station.modified = modified
                         station.system_id = systems[td_station.system.ID].id
                         station.black_market = td_station.blackMarket == "Y"
                         station.ls_from_star = td_station.lsFromStar
@@ -204,7 +209,10 @@ class EDData(metaclass=SingletonMeta):
 
         if updated_stations:
             print(f"Trying to update {len(updated_stations)} stations...")
-            Station.objects.bulk_update(updated_stations, ['item_count', 'data_age_days', 'black_market', 'ls_from_star', 'market', 'system_id'], batch_size=10000)
+            with transaction.atomic():
+                for station in updated_stations:
+                    # print(model_to_dict(ll))
+                    Station.objects.filter(id=station.id).update(**model_to_dict(station))
             print(f"Updated {len(updated_stations)} stations.")
 
     def update_local_commodities(self, tdb=None):
@@ -278,15 +286,19 @@ class EDData(metaclass=SingletonMeta):
         for station_ids_chunk in tqdm(chunks_no_overlap(td_listings_station_ids, TD_PART_SIZE)):
             min_station_td_id, max_station_td_id = min(station_ids_chunk), max(station_ids_chunk)
             t1 = time.time()
+
             if full_update:
+                # TODO: Maybe parse from csv file instead.
                 td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
             else:
                 td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
+
+
             existing_live_listings = {(ll.station_id, ll.commodity_id): ll for ll in LiveListing.objects.filter(Q(station_tradedangerous_id__gte=min_station_td_id) & Q(station_tradedangerous_id__lte=max_station_td_id)).all()}  # Problem
             db.reset_queries()
             for td_item_station_row in td_row_part:
                 station_td_id, item_td_id, demand_price, demand_units, _, supply_price, supply_units, _, modified_str, from_live = td_item_station_row
-                modified = make_timezone_aware(datetime.strptime(modified_str, "%Y-%m-%d %H:%M:%S"))
+                modified = make_timezone_aware(datetime.datetime.strptime(modified_str, "%Y-%m-%d %H:%M:%S"))
                 try:
                     station: Station = stations[station_td_id]
                 except KeyError:
@@ -294,10 +306,10 @@ class EDData(metaclass=SingletonMeta):
                     # print(f"Station TD id {station_td_id} does not exist in django database.")
                     station = None
                 if station:
-                    if station.fleet and station.id not in carriers_of_interest:
-                        continue
-                    if station.fleet:
-                        total_updated_carriers += 1
+                    # if station.fleet and station.id not in carriers_of_interest:
+                    #     continue
+                    # if station.fleet:
+                    #     total_updated_carriers += 1
                     station_id = station.id
                     com_id = commodities_td_to_django_ids[item_td_id]
                     try:
@@ -339,17 +351,18 @@ class EDData(metaclass=SingletonMeta):
                 else:
                     # Station not found.
                     ...
-            # print(f'TD Part took {time.time() - t1}')
-            # print()
-
-        # print(f'Queried TD in {time.time() - t0} seconds.')
-
         print(f"New {len(new_listings)}, {len(updated_listings)}, {len(new_historic_listings)}, {ignored_historic_listings}")
         if new_listings:
             print("Saving new listings")
+            t0 = time.time()
             for chunk in tqdm(list(chunks(new_listings, 200000))):
+                # LiveListing.objects.bulk_update_or_create(
+                #     chunk,
+                #     changeable_attributes + ['commodity_id', 'commodity_tradedangerous_id', 'station_id', 'station_tradedangerous_id', 'from_live'],
+                #     match_field=('commodity_id', 'station_id'))
                 LiveListing.objects.bulk_create(list(chunk))
-                db.reset_queries()
+            print(f"Saving new took {time.time() - t0}")
+        db.reset_queries()
         del new_listings
 
         if new_historic_listings:
@@ -358,12 +371,20 @@ class EDData(metaclass=SingletonMeta):
                 HistoricListing.objects.bulk_create(list(chunk))
                 db.reset_queries()
         del new_historic_listings
+
+        t0 = time.time()
         if updated_listings:
             print("Saving updated listings")
             for chunk in tqdm(list(chunks(updated_listings, 20000))):
-                LiveListing.objects.bulk_update(list(chunk), changeable_attributes)
-                db.reset_queries()
+                # LiveListing.objects.bulk_update(list(chunk), changeable_attributes)
+                with transaction.atomic():
+                    ll: LiveListing
+                    for ll in chunk:
+                        # print(model_to_dict(ll))
+                        LiveListing.objects.filter(id=ll.id).update(**model_to_dict(ll))  # https://www.sankalpjonna.com/learn-django/running-a-bulk-update-with-django
+        db.reset_queries()
         del updated_listings
+        print(f"Saving updated listings: {time.time() - t0}")
         print(f"Done updating listings. {total_new_listings} new, {total_updated_listings} updated ({total_updated_carriers} FC listings), {total_new_historic_listings} historic added, {ignored_historic_listings} historic ignored.")
 
     def update_cache(self):

@@ -7,6 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
 from django.db.models import Q
+from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +19,7 @@ from EDSite.helpers import make_timezone_aware, list_to_columns
 from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, System, CarrierMission
 
 
-CURRENT_SYSTEM = System.objects.get(id=16254)  # Sol system
+CURRENT_SYSTEM = None  # System.objects.get(id=16254)  # Sol system
 # EDData().start_live_listener()
 
 
@@ -67,7 +68,6 @@ def commodities(request):
     context = {
         'categories': CommodityCategory.objects.all(),
     }
-    # pprint(context['categories'][0].commodities.all())
     return render(request, 'EDSite/commodities.html', base_context(request) | context)
 
 

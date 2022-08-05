@@ -56,6 +56,10 @@
                                     <td>{{ mission.station_units }}</td>
                                 </tr>
                                 <tr class="carrier_order_row">
+                                    <th>Landing Pad</th>
+                                    <td>{{ mission.station.pad_size }}</td>
+                                </tr>
+                                <tr class="carrier_order_row">
                                     <th>Distance</th>
                                     <td>{{ mission_distances|get_value:mission.id }} Ly</td>
                                 </tr>
