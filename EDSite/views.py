@@ -20,11 +20,11 @@ from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, Sy
 from EDSiteProject import settings
 
 CURRENT_SYSTEM = System.objects.get(name="Sol")  # Sol system
-if settings.LIVE_UPDATER:
-    print('Starting the live listener.')
-    EDData().start_live_listener()
-else:
-    print('Not starting the live listener.')
+# if settings.LIVE_UPDATER:
+#     print('Starting the live listener.')
+#     EDData().start_live_listener()
+# else:
+#     print('Not starting the live listener.')
 
 
 def logged_in_user(request):
