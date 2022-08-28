@@ -103,6 +103,8 @@ celerybeat.pid
 
 # Environments
 .env
+.env.docker
+.env.heroku
 .env.dev
 .env.local
 .venv

@@ -17,10 +17,14 @@ from EDSite.tools.ed_data import EDData
 from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionForm
 from EDSite.helpers import make_timezone_aware, list_to_columns
 from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, System, CarrierMission
+from EDSiteProject import settings
 
-
-CURRENT_SYSTEM = None  # System.objects.get(id=16254)  # Sol system
-# EDData().start_live_listener()
+CURRENT_SYSTEM = System.objects.get(name="Sol")  # Sol system
+if settings.LIVE_UPDATER:
+    print('Starting the live listener.')
+    EDData().start_live_listener()
+else:
+    print('Not starting the live listener.')
 
 
 def logged_in_user(request):
@@ -31,7 +35,8 @@ def base_context(request) -> {}:
     return {
         'current_user': logged_in_user(request),
         'current_system': CURRENT_SYSTEM,
-        'current_carrier': ('Normandy SR-404', 'K7Q-BQL')
+        'current_carrier': ('Normandy SR-404', 'K7Q-BQL'),
+        'DEBUG_MODE': settings.DEBUG_MODE
     }
 
 

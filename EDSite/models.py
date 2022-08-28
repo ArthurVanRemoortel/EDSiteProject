@@ -10,6 +10,7 @@ from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 
 IS_LIVE_MINUTES = 60
 
+
 class CommodityCategory(models.Model):
     name = models.CharField(max_length=100)
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)

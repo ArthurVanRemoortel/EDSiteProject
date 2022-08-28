@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import threading
 import time
@@ -54,6 +55,7 @@ class EDData(metaclass=SingletonMeta):
 
     @property
     def tdb(self, *args) -> tradedb.TradeDB:
+        print("ls: ", os.listdir('.'))
         return tradedb.TradeDB(args)
 
     def check_tradedangerous_db(self):
@@ -388,7 +390,6 @@ class EDData(metaclass=SingletonMeta):
         print(f"Done updating listings. {total_new_listings} new, {total_updated_listings} updated ({total_updated_carriers} FC listings), {total_new_historic_listings} historic added, {ignored_historic_listings} historic ignored.")
 
     def update_cache(self):
-        t0 = time.time()
         commodities = Commodity.objects.all()
         best_buys = {commodity.id: None for commodity in commodities}
         best_sells = {commodity.id: None for commodity in commodities}

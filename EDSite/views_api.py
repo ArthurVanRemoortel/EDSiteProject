@@ -22,10 +22,6 @@ class CommoditiesViewSet(viewsets.ModelViewSet):
         return qs.all()
 
 
-class LiveListingSerializer:
-    pass
-
-
 class ListingsViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ListingsSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
