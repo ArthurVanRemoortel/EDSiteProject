@@ -45,7 +45,7 @@ LIVE_UPDATER = os.getenv('LIVE_UPDATER') == "True"
 
 DEBUG_MODE = os.getenv('DEBUG_MODE') == "True"
 
-print(f'Connecting to DB: {DATABASE_HOST}:{DATABASE_PORT}.)
+print(f'Connecting to DB: {DATABASE_HOST}:{DATABASE_PORT}.')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
