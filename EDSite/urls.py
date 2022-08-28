@@ -1,3 +1,4 @@
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path, include, re_path
 from rest_framework import routers
 
@@ -35,3 +36,5 @@ urlpatterns = [
 
     # path('api/commodities', views_api.api_commodities, name="api_commodities")
 ]
+
+urlpatterns += staticfiles_urlpatterns()
