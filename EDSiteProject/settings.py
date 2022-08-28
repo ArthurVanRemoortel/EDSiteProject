@@ -189,6 +189,9 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50
 }
 DEBUG_PROPAGATE_EXCEPTIONS = True
+
+CSRF_TRUSTED_ORIGINS = ['https://my-elite-site.herokuapp.com']
+
 # LOGGING = {
 #     'version': 1,
 #     'handlers': {
