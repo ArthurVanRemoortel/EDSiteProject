@@ -416,24 +416,29 @@ class EDData(metaclass=SingletonMeta):
                               update_listings=True, update_cache=True, full_listings_update=True):
         self.live_listener.pause()
         t0 = time.time()
-        tdb = self.tdb
+        tdb = None
         if data:
+            tdb = self.tdb
             t1 = time.time()
             self.update_tradedangerous_database()
             print(f"Updating TradeDangerous took {time.time() - t1} seconds")
         if update_systems:
+            tdb = self.tdb
             t2 = time.time()
             self.update_local_systems(tdb)
             print(f"Updating systems took {time.time() - t2} seconds")
         if update_stations:
+            tdb = self.tdb
             t3 = time.time()
             self.update_local_stations(tdb)
             print(f"Updating stations took {time.time() - t3} seconds")
         if update_commodities:
+            tdb = self.tdb
             t4 = time.time()
             self.update_local_commodities(tdb)
             print(f"Updating commodities took {time.time() - t4} seconds")
         if update_listings:
+            tdb = self.tdb
             t5 = time.time()
             self.update_local_listings2(tdb, full_update=full_listings_update)
             # self.update_local_listings(tdb, full_update=full_listings_update)
