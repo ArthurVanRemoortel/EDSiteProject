@@ -1,4 +1,5 @@
 import datetime
+import threading
 from pprint import pprint
 
 from django.contrib import messages
@@ -215,7 +216,10 @@ def trade_routes(request):
 @csrf_exempt
 def debug_reload(request):
     print("Going to update data.")
-    EDData().update_tradedangerous_database()
+    def f():
+        EDData().update_tradedangerous_database()
+    threading.Thread(target=f).start()
+    # EDData().update_tradedangerous_database()
     return JsonResponse({
         "status": EDData().td_database_status.__str__()
     })
@@ -229,14 +233,17 @@ def debug_update_database(request, mode='False'):
     cache = mode == 'cache'
 
     print(f"Updating local database ({mode})...")
-    EDData().update_local_database(data=update_all or quick,
-                                   update_stations=update_all or quick,
-                                   update_systems=update_all or quick,
-                                   update_commodities=update_all or quick,
-                                   update_listings=update_all or listings or quick,
-                                   update_cache=update_all or listings or cache or quick,
-                                   full_listings_update=not quick,
-                                   )
+    def f():
+        EDData().update_local_database(data=update_all or quick,
+                                       update_stations=update_all or quick,
+                                       update_systems=update_all or quick,
+                                       update_commodities=update_all or quick,
+                                       update_listings=update_all or listings or quick,
+                                       update_cache=update_all or listings or cache or quick,
+                                       full_listings_update=not quick,
+                                       )
+    threading.Thread(target=f).start()
+
     return JsonResponse({
         "status": "No status"
     })

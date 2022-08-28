@@ -55,7 +55,6 @@ class EDData(metaclass=SingletonMeta):
 
     @property
     def tdb(self, *args) -> tradedb.TradeDB:
-        print("ls: ", os.listdir('.'))
         return tradedb.TradeDB(args)
 
     def check_tradedangerous_db(self):
