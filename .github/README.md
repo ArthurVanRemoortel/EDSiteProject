@@ -6,6 +6,10 @@ The in-game tools to explore these large amounts of data are very basic and not 
 
 This website will allow you to explore the large quantities of data from the game, as well as post and share you fleet carrier missions so other players can more easily find good trade opportunities.
 
+## Previews
+![Alt text](https://github.com/ArthurVanRemoortel/EDSiteProject/blob/main/.github/img.png?raw=true "Commodities")
+![Alt text](https://github.com/ArthurVanRemoortel/EDSiteProject/blob/main/.github/img2.png?raw=true "Commodity search")
+
 ## Features
 - All users and guests can explore game data. This data is synchronised with the [Elite Dangerous Data Network](https://github.com/EDCD/EDDN)
   - Systems
