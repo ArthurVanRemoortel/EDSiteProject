@@ -272,8 +272,6 @@ def signup_view(request):
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request, request.POST)
-        print(form.data.get('username'))
-        print(form.data.get('password'))
         if form.is_valid() or True:
             username = form.cleaned_data.get('username')
             # email = form.cleaned_data.get('email')

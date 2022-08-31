@@ -208,15 +208,7 @@ class LiveListener:
                             # TODO: New systems not in db yet.
                         break
             if station:
-                # if station.fleet and station.id not in carriers_of_interest:
-                #     print('Not interested in carrier')
-                #     continue
-                t0 = time.time()
-                # station_listings = {listing.commodity_id: listing for listing in station.listings.all()}
                 station_listings = {listing.commodity_id: listing for listing in LiveListing.objects.filter(station_tradedangerous_id=station.tradedangerous_id)}
-                # station.data_age_days =
-                # print('station_listings: ', time.time() - t0)
-                # print(f"Update for station {station} with {len(commodities)} commodities. ({len(station_listings)} existing)")
                 for commodity_entry in commodities:
                     commodity_name = commodity_entry['name'].lower()
                     if (commodity_entry['sellPrice'] == 0 and commodity_entry['buyPrice'] == 0) or (commodity_entry['demand'] == 0 and commodity_entry['stock'] == 0):
@@ -236,10 +228,6 @@ class LiveListener:
                         demand_units = commodity_entry['demand']
                         supply_units = commodity_entry['stock']
                         if live_listings:
-                            # if demand_units != live_listings.demand_units \
-                            #         or supply_units != live_listings.supply_units \
-                            #         or demand_price != live_listings.demand_price \
-                            #         or supply_price != live_listings.supply_price:
                             live_listings.demand_price = demand_price
                             live_listings.supply_price = supply_price
                             live_listings.demand_units = demand_units
@@ -275,9 +263,6 @@ class LiveListener:
 
     def get_batch(self):
         while self.active:
-            # if self.paused:
-            #     time.sleep(1)
-            #     continue
             now = time.time()
             hardCutoff = now + self.maxBatchTime
             softCutoff = now + self.minBatchTime
