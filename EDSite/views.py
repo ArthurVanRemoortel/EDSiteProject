@@ -285,8 +285,7 @@ def login_view(request):
                 return redirect("index")
             else:
                 # Return an 'invalid login' error message.
-                print(user)
-                ...
+                messages.error(request, "Unsuccessful login. Invalid information.")
         else:
             print('Valid:', form.is_valid(), form.errors)
             messages.error(request, "Unsuccessful login. Invalid information.")
