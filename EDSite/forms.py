@@ -148,31 +148,34 @@ class SignupForm(UserCreationForm):
     def save(self, commit=True):
         user = super(UserCreationForm, self).save(commit=False)
         user.email = self.cleaned_data['email']
+        user.set_password(self.cleaned_data['password1'])
         if commit:
             user.save()
         return user
 
 
 class LoginForm(AuthenticationForm):
-    email = forms.EmailField(
-        widget=forms.TextInput(
-            attrs={'class': 'input'}
-        ),
-        required=False,
-    )
+    # email = forms.EmailField(
+    #     widget=forms.TextInput(
+    #         attrs={'class': 'input'}
+    #     ),
+    #     required=False,
+    # )
     username = forms.CharField(
         widget=forms.TextInput(
             attrs={'class': 'input'}
         ),
-        required=True,
+        # required=True,
     )
     password = forms.CharField(
+        label="Password",
+        strip=False,
         widget=PasswordInput(
             attrs={'class': 'input', "autocomplete": "current-password"}
         ),
-        required=True,
+        # required=True,
     )
 
     class Meta:
         model = User
-        fields = ("email", "username", "password")
+        fields = ("username", "password")

@@ -19,11 +19,12 @@ from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionFor
 from EDSite.helpers import make_timezone_aware, list_to_columns
 from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, System, CarrierMission
 from EDSiteProject import settings
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
 CURRENT_SYSTEM = System.objects.get(name="Sol")  # Sol system
 if settings.LIVE_UPDATER:
     print('Starting the live listener.')
-    EDData().start_live_listener()
+    threading.Thread(target=EDData().start_live_listener).start()
 else:
     print('Not starting the live listener.')
 
@@ -271,15 +272,23 @@ def signup_view(request):
 def login_view(request):
     if request.method == "POST":
         form = LoginForm(request, request.POST)
-        if form.is_valid():
+        print(form.data.get('username'))
+        print(form.data.get('password'))
+        if form.is_valid() or True:
             username = form.cleaned_data.get('username')
-            email = form.cleaned_data.get('email')
+            # email = form.cleaned_data.get('email')
             password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
-            messages.success(request, "login successful.")
-            login(request, user)
-            return redirect("index")
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                messages.success(request, "login successful.")
+                login(request, user)
+                return redirect("index")
+            else:
+                # Return an 'invalid login' error message.
+                print(user)
+                ...
         else:
+            print('Valid:', form.is_valid(), form.errors)
             messages.error(request, "Unsuccessful login. Invalid information.")
     else:
         form = LoginForm()
