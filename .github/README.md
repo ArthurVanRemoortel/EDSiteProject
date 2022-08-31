@@ -22,10 +22,15 @@ This website will allow you to explore the large quantities of data from the gam
   
 
 TODO:
-- Pin commodities
-- Regular updates on important commodities
-- Auto background updates
-- Proper login and signup form validation.
-  - https://docs.djangoproject.com/en/4.0/topics/auth/customizing/
-- Integration with the official API for user data.
-- Testing
+- Features:
+  - Pin commodities
+  - Regular updates on important commodities
+  - Proper login and signup form validation.
+    - https://docs.djangoproject.com/en/4.0/topics/auth/customizing/
+  - Integration with the official API for user data.
+  - Create missions
+- Fixes:
+  - Auto background updates
+    - 
+  - Testing
+  - Admin tools.

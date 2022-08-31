@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "edsiteproject"
+version = "0.1.0"
+description = "A website with various tools for the Elite Danegrous game."
+authors = ["ArthurVanRemoortel <arthurvanremoortel@gmail.com>"]
+readme = ".github/README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+gunicorn = "^20.1.0"
+mysqlclient = "^2.1.1"
+python-dotenv = "^0.20.0"
+tradedangerous = "^10.13.7"
+libsass = "^0.21.0"
+django-compressor = "^4.1"
+django-sass-processor = "^1.2.1"
+tqdm = "^4.64.0"
+django-bulk-update-or-create = "^0.3.0"
+pyzmq = "^23.2.1"
+Django = "4.0.6"
+django-redis = "^5.2.0"
+djangorestframework = "^3.13.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

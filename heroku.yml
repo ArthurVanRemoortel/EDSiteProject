@@ -1,8 +1,0 @@
-setup:
-  config:
-    env_file: .env.heroku
-build:
-  docker:
-    web: Dockerfile
-run:
-  web: gunicorn EDSiteProject.wsgi:application
