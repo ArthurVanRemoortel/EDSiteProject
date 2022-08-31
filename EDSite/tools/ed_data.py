@@ -113,11 +113,11 @@ class EDData(metaclass=SingletonMeta):
 
     def get_carriers_of_interest(self) -> {int: Station}:
         mission: CarrierMission
-        return {mission.carrier.id: mission.carrier for mission in CarrierMission.objects.all()}
+        return {mission.carrier.id: mission.carrier for mission in CarrierMission.objects.all() if mission.carrier}
 
     def get_stations_of_interest(self) -> {int: Station}:
         mission: CarrierMission
-        return {mission.station.id: mission.station for mission in CarrierMission.objects.all()}
+        return {mission.station.id: mission.station for mission in CarrierMission.objects.all() if mission.station}
 
     def update_local_systems(self, tdb=None):
         if not tdb:
