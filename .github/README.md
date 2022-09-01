@@ -31,6 +31,5 @@ TODO:
   - Create missions
 - Fixes:
   - Auto background updates
-    - 
   - Testing
   - Admin tools.
