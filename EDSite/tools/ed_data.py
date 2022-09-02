@@ -44,11 +44,12 @@ class EDData(metaclass=SingletonMeta):
         # self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
         # self.system_names = {system.name.lower(): system for system in System.objects.all()}
         # self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
-        self.live_listener = LiveListener(ed_data=self)
-        threading.Thread(target=self.update_cache).start()
+        self.live_listener = None
+        # threading.Thread(target=self.update_cache).start()
         print("Created new EDData object.")
 
     def start_live_listener(self):
+        self.live_listener = LiveListener(ed_data=self)
         self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
         self.system_names = {system.name.lower(): system for system in System.objects.all()}
         self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
@@ -416,7 +417,8 @@ class EDData(metaclass=SingletonMeta):
 
     def update_local_database(self, data=True, update_systems=True, update_stations=True, update_commodities=True,
                               update_listings=True, update_cache=True, full_listings_update=True):
-        self.live_listener.pause()
+        if self.live_listener:
+            self.live_listener.pause()
         t0 = time.time()
         tdb = None
         if data:
@@ -450,7 +452,8 @@ class EDData(metaclass=SingletonMeta):
             self.update_cache()
             print(f"Updating cache took {time.time() - t6} seconds")
         print(f"Updating entire database took {time.time() - t0} seconds")
-        self.live_listener.unpause()
+        if self.live_listener:
+            self.live_listener.unpause()
 
     def avg_selling_items(self):
         return self.tdb.getAverageSelling()

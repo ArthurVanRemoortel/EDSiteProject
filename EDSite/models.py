@@ -51,7 +51,6 @@ class Commodity(models.Model):
     @property
     def max_profit(self):
         buy, sell = self.best_listings
-        print(buy, sell)
         if not buy or not sell:
             return 0
         return buy.demand_price - sell.supply_price

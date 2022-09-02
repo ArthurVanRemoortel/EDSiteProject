@@ -37,3 +37,5 @@ TODO:
   - Auto background updates
   - Testing
   - Admin tools.
+  - Store large data folder outside of docker container.
+  - Load slow pages asynchronously.

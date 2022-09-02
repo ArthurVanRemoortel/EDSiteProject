@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 # https://stackoverflow.com/questions/53835198/integrating-python-poetry-with-docker
 FROM python:3.10.5
+EXPOSE 6379
 
 ARG YOUR_ENV
 

@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 try:
     from dotenv import load_dotenv
-    load_dotenv('.env.local') if os.path.exists('.env.local') else load_dotenv('.env.dev')
+    load_dotenv('.env.dev')
 except ModuleNotFoundError:
     pass
 
@@ -39,7 +39,7 @@ DATABASE_NAME = os.getenv('DATABASE_NAME')
 
 DJANGO_SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# REDIS_HOST = os.getenv('REDIS_HOST')
+REDIS_HOST = os.getenv('REDIS_HOST')
 
 LIVE_UPDATER = os.getenv('LIVE_UPDATER') == "True"
 
@@ -119,23 +119,23 @@ DATABASES = {
     }
 }
 
-
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django_redis.cache.RedisCache",
-#         "LOCATION": f"redis://{REDIS_HOST}:6379/1",
-#         "OPTIONS": {
-#             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-#         }
-#     }
-# }
-
+print("REDIS_HOST =", REDIS_HOST)
 CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'unique-snowflake',
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 }
+
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+#         'LOCATION': 'unique-snowflake',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
