@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+{% extends 'EDSite/base.html'%}
+{% block title %}
+    System - {{ station.name }}
+{% endblock %}
+
+{% block content %}
+
+    <div class="container" style="padding-top: 1em">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/">
+                        <span class="icon is-small">
+                            <i class="fas fa-home" aria-hidden="true"></i>
+                        </span>
+                        <span>Home</span></a></li>
+                <li>
+                    <a href="/systems">
+                        <span class="icon is-small">
+                            <i class="fa fa-satellite"></i>
+                        </span>
+                        <span>Systems</span>
+                    </a>
+                </li>
+                <li class="is-active"> <a href="#">{{ system.name }}</a></li>
+            </ul>
+        </nav>
+        <h2 class="title is-2 is-spaced bd-anchor-title">
+            {{ system.name }}
+{#            <a class="subtitle is-3 thin" href="/systems/{{ station.system.id }}">#}
+{#                {{ station.system.name }}#}
+{#            </a>#}
+        </h2>
+        <article class="panel is-info">
+            <div class="tabs panel-heading is-boxed">
+                <ul>
+                    <li class="is-active">
+                        <a>
+                            <span class="icon is-small"><i class="fas fa-circle-info" aria-hidden="true"></i></span>
+                            <span>Overview</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <span class="icon is-small"><i class="fas fa-people-group" aria-hidden="true"></i></span>
+                            <span>Factions</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a>
+                            <span class="icon is-small"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
+                            <span>Bodies</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="panel-block columns">
+                <div class="column column_fixed_10">
+                </div>
+                <div class="column column_fixed_10">
+                </div>
+                <div class="column column_fixed_10">
+                </div>
+            </div>
+        </article>
+    </div>
+{% endblock %}

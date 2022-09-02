@@ -60,6 +60,34 @@ class CommodityForm(forms.Form):
     )
 
 
+class SystemsForm(forms.Form):
+    search = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input'}
+        ),
+        required=False,
+    )
+
+
+    reference_system = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input'}
+        ),
+        required=False,
+    )
+
+    only_populated = forms.ChoiceField(
+        widget=forms.Select(
+            attrs={
+                # 'style': 'width: 100%'
+            }
+        ),
+        required=False,
+        choices=YES_NO_CHOICES,
+    )
+
+
+
 class CarrierMissionForm(forms.Form):
     carrier_name = forms.CharField(
         widget=forms.TextInput(

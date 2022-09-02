@@ -16,6 +16,7 @@ urlpatterns = [
     path('systems', views.systems, name='systems'),
     path('stations', views.stations, name='stations'),
     path('stations/<int:station_id>', views.station, name='station'),
+    path('systems/<int:system_id>', views.system, name='system'),
     path('commodities', views.commodities, name='commodities'),
     path('commodities/<int:item_id>', views.commodity, name='commodity'),
     path('rares', views.rares, name='rares'),

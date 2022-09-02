@@ -1,11 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 {% extends 'EDSite/base.html'%}
-<head>
-    <meta charset="UTF-8">
-    <title>EDSite</title>
-</head>
-<body>
+{% block title %}
+    Commodities
+{% endblock %}
 
-</body>
+{% block content %}
+
+    <div class="container" style="padding-top: 1em">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/">
+                        <span class="icon is-small">
+                            <i class="fas fa-home" aria-hidden="true"></i>
+                        </span>
+                        <span>Home</span></a></li>
+                    <li class="is-active"> <a href="#">Systems</a></li>
+            </ul>
+        </nav>
+
+
+        <h2 class="title is-2 is-spaced bd-anchor-title">
+            Systems
+        </h2>
+
+    <article class="panel is-info mt-6">
+            <p class="panel-heading">
+                Search
+            </p>
+            <form action="{% url 'systems' %}" method="post">
+                {% csrf_token %}
+                <div class="panel-block">
+                    <table class="table is-fullwidth">
+                        <thead style="">
+                            <tr>
+                                <th style="width:33%"></th>
+                                <th style="width:33%"></th>
+                                <th style="width:33%"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+                        <tr>
+                            <td colspan=3>
+                                <div class="field">
+                                    <label class="label">Search</label>
+                                    <div class="control">
+                                        {{ form.search }}
+                                    </div>
+                                </div>
+                            </td>
+                        <tr>
+                            <td colspan=2>
+                                <div class="field">
+                                    <label class="label">Reference System</label>
+                                    <div class="control">
+                                        {{ form.reference_system}}
+                                    </div>
+                                </div>
+                            </td>
+                            <td colspan=1>
+                                <div class="field">
+                                    <label class="label">Only Populated</label>
+                                    <div class="select-wide select is-primary">
+                                        {{ form.only_populated}}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+
+                        <tr>
+                            <td>
+                                <div class="field">
+                                    <div class="control">
+                                        <button type="submit" class="button is-link">Submit</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </form>
+        </article>
+
+        <article class="panel is-info mb-6 mt-6">
+            <p class="panel-heading">Results</p>
+
+            <div class="panel-block">
+                <table class="table is-hoverable is-fullwidth ">
+                    <thead>
+                    <tr>
+                        <th class="commodity_th"><abbr title="Station">System</abbr></th>
+                        <th><abbr title="System"># Stations</abbr></th>
+                        <th><abbr title="System">Population</abbr></th>
+                        <th><abbr title="Price">Distance</abbr></th>
+                        <th><abbr title="Price">Distance Sol</abbr></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for system in systems %}
+                        <tr>
+                            <th>
+                                <a href="/systems/{{ system.id }}"> {{ system.name }}</a>
+                            </th>
+                            <th> {{ system.stations.count }} </th>
+                            <th> ? </th>
+                            <th> ? </th>
+                            <th> {{ system.distance_to_sol|floatformat:0 }} <span class="unit">Ly</span> </th>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+    </div>
+{% endblock %}
 </html>

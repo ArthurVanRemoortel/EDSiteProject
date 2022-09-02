@@ -44,10 +44,10 @@
                     <p class="mt-2">Maximum Profit</p>
                 </div>
                 <div class="column column_fixed_10">
-                    <p class="mt-2">{{ commodity.average_buy }} <span class="cr">CR</span> </p>
-                    <p class="mt-2">{{ commodity.best_buy.demand_price }} <span class="cr">CR</span></p>
-                    <p class="mt-2">{{ commodity.best_sell.supply_price }} <span class="cr">CR</span></p>
-                    <p class="mt-2">{{ 0 }} <span class="cr">CR</span></p>
+                    <p class="mt-2">{{ commodity.average_buy }} <span class="unit">CR</span> </p>
+                    <p class="mt-2">{{ commodity.best_buy.demand_price }} <span class="unit">CR</span></p>
+                    <p class="mt-2">{{ commodity.best_sell.supply_price }} <span class="unit">CR</span></p>
+                    <p class="mt-2">{{ 0 }} <span class="unit">CR</span></p>
                 </div>
                 <div class="column">
                     <br class="mt-2">
@@ -67,7 +67,7 @@
                         in
                         <a href="/systems/{{ commodity.best_sell.station.system.id }}">{{ commodity.best_sell.station.system.name }}</a>
                     </p>
-                    <p class="mt-2">{{ 0 }} <span class="cr">CR</span></p>
+                    <p class="mt-2">{{ 0 }} <span class="unit">CR</span></p>
                 </div>
             </div>
         </article>
@@ -217,7 +217,7 @@
 
                             <th> {{ listing.station.pad_size }} </th>
                             <th> {{ listing.modified_string }} </th>
-                            <th> {{ listing.station.ls_from_star }} <span class="cr">LS</span></th>
+                            <th> {{ listing.station.ls_from_star }} <span class="unit">Ls</span></th>
                             <th> </th>
 
                         </tr>

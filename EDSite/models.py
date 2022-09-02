@@ -103,6 +103,13 @@ class System(models.Model):
         dZ = (self.pos_z - other.pos_z)
         return ((dX ** 2) + (dY ** 2) + (dZ ** 2)) ** 0.5
 
+    def distance_to_sol(self):
+        # TODO: Save this in DB so it doesn't need to be recalculated every time.
+        dX = self.pos_x
+        dY = self.pos_y
+        dZ = self.pos_z
+        return ((dX ** 2) + (dY ** 2) + (dZ ** 2)) ** 0.5
+
     def __str__(self):
         return self.name + f"({self.id})"
 

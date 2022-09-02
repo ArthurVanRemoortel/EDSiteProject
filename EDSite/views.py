@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 # import EDSite.ed_data
 from EDSite.tools.ed_data import EDData
-from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionForm
+from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionForm, SystemsForm
 from EDSite.helpers import make_timezone_aware, list_to_columns
 from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, System, CarrierMission
 from EDSiteProject import settings
@@ -49,11 +49,43 @@ def index(request):
 
 def systems(request):
     context = {}
+    if request.method == 'GET':
+        form = SystemsForm()
+        form.fields['only_populated'].initial = 'No'
+        context['systems'] = System.objects.order_by('id')[:40]
+    else:
+        form = SystemsForm(request.POST)
+        search = form.data['search']
+        ref_system_name = form.data['reference_system']
+        only_populated = form.data['only_populated'] == 'yes'
+        if search:
+            filtered_systems = System.objects.filter(name__icontains=search)
+        else:
+            filtered_systems = System.objects.all()
+        context['systems'] = filtered_systems[:40]
+    context['form'] = form
     return render(request, 'EDSite/systems.html', base_context(request) | context)
+
+
+def system(request, system_id):
+    system = System.objects.get(pk=system_id)
+
+    context = {
+        'system': system,
+    }
+
+    return render(request, 'EDSite/system.html', base_context(request) | context)
 
 
 def stations(request):
     context = {}
+    if request.method == 'GET':
+        form = SystemsForm()
+        context['stations'] = Station.objects.order_by('id')[:40]
+    else:
+        form = SystemsForm(request.POST)
+        context['stations'] = Station.objects.order_by('id')[:40]
+    context['form'] = form
     return render(request, 'EDSite/stations.html', base_context(request) | context)
 
 
@@ -113,7 +145,7 @@ def commodity(request, item_id):
                 listings = listings.filter(Q(station__pad_size='L'))
 
             listings = listings.order_by('-demand_price' if buy_or_sell == 'sell' else 'supply_price')
-            listings = listings[:30]
+            listings = listings[:40]
         else:
             raise Exception()
     context = {

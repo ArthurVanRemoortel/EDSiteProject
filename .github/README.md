@@ -23,7 +23,11 @@ This website will allow you to explore the large quantities of data from the gam
 
 TODO:
 - Features:
-  - Pin commodities
+  - Search bars with auto-complete.
+  - Complete system page with link to EDDB.
+  - Complete station page with link to EDDB.
+  - Easy copy-paste of object names.
+  - Pin/Favorite commodities
   - Regular updates on important commodities
   - Proper login and signup form validation.
     - https://docs.djangoproject.com/en/4.0/topics/auth/customizing/
