@@ -396,7 +396,7 @@ class EDData(metaclass=SingletonMeta):
         best_buys = {commodity.id: None for commodity in commodities}
         best_sells = {commodity.id: None for commodity in commodities}
         live_listing: LiveListing
-        for live_listing in tqdm(LiveListing.objects.filter(~Q(supply_units=0) & ~Q(demand_units=0)).iterator()):
+        for live_listing in tqdm(LiveListing.objects.filter(Q(supply_units__gte=5) | Q(demand_units__gte=100)).iterator(100000)):
             if live_listing.is_recently_modified:
                 if live_listing.is_high_supply() and 0 < live_listing.supply_price and live_listing.is_recently_modified:
                     if not best_sells[live_listing.commodity_id] or best_sells[live_listing.commodity_id].supply_price > live_listing.supply_price:
@@ -407,6 +407,7 @@ class EDData(metaclass=SingletonMeta):
                         best_buys[live_listing.commodity_id] = live_listing
 
         for commodity in commodities:
+
             if best_buys[commodity.id] and (best_buys[commodity.id].demand_units == 0):
                 best_buys[commodity.id] = None
             if best_sells[commodity.id] and best_sells[commodity.id].supply_units == 0:

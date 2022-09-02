@@ -39,3 +39,4 @@ TODO:
   - Admin tools.
   - Store large data folder outside of docker container.
   - Load slow pages asynchronously.
+  - Redis data container not persistent on linux?
