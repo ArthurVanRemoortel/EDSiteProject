@@ -47,7 +47,7 @@
                     <p class="mt-2">{{ commodity.average_buy }} <span class="unit">CR</span> </p>
                     <p class="mt-2">{{ commodity.best_buy.demand_price }} <span class="unit">CR</span></p>
                     <p class="mt-2">{{ commodity.best_sell.supply_price }} <span class="unit">CR</span></p>
-                    <p class="mt-2">{{ 0 }} <span class="unit">CR</span></p>
+                    <p class="mt-2">{{ commodity.max_profit }} <span class="unit">CR</span></p>
                 </div>
                 <div class="column">
                     <br class="mt-2">
@@ -67,7 +67,7 @@
                         in
                         <a href="/systems/{{ commodity.best_sell.station.system.id }}">{{ commodity.best_sell.station.system.name }}</a>
                     </p>
-                    <p class="mt-2">{{ 0 }} <span class="unit">CR</span></p>
+                    <br class="mt-2">
                 </div>
             </div>
         </article>
