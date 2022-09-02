@@ -1,5 +1,5 @@
 # EDSiteProject
-A website with various tools for the [Elite Dangerous game](https://www.elitedangerous.com/). This website is a work in progress. A demo version of the website is hosted on Heroku [here](http://edsite.arthurvanremoortel.me).
+A website with various tools for the [Elite Dangerous game](https://www.elitedangerous.com/). This website is a work in progress. A demo version of the website is hosted on [here](http://edsite.arthurvanremoortel.me).
 
 In this game you play as a pilot of a spaceship. The game takes place in a very large simulation of the Milky Way with around 400 billion stars and thousands of space stations.
 The in-game tools to explore these large amounts of data are very basic and not very useful. This lead to the creation of many community-developed tools.
@@ -35,6 +35,5 @@ TODO:
   - Create missions
 - Fixes:
   - Auto background updates
-    - 
   - Testing
   - Admin tools.
