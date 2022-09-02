@@ -32,7 +32,7 @@
                             <td style="text-align: right">
                                 {% if commodity.best_buy is not None %}
                                     {{ commodity.best_buy.demand_price }}
-                                    <span class="cr ml-1">
+                                    <span class="unit ml-1">
                                         CR
                                     </span>
                                 {% endif %}
@@ -49,7 +49,7 @@
                             <td style="text-align: right">
                                 {% if commodity.best_sell is not None %}
                                     {{ commodity.best_sell.supply_price }}
-                                    <span class="cr ml-1">
+                                    <span class="unit ml-1">
                                         CR
                                     </span>
                                 {% endif %}
@@ -68,7 +68,7 @@
                             {% with profit=commodity.max_profit %}
                                 {% if profit %}
                                     {{ profit }}
-                                    <span class="cr ml-1">
+                                    <span class="unit ml-1">
                                             CR
                                     </span>
                                 {% endif %}

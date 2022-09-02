@@ -142,8 +142,8 @@ class LiveListener:
             if self.paused:
                 time.sleep(1)
                 continue
-            if len(self.data_queue) > 0:
-                print(f'{len(self.data_queue)} items on queue.')
+            if len(self.data_queue) > 5:
+                print(f'WARNING: {len(self.data_queue)} items on queue.')
             if to_update_listings:
                 t0 = time.time()
                 # print(f"Should update {len(to_update_listings)} live_listings")

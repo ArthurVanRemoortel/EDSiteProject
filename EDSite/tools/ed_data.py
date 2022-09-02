@@ -45,6 +45,8 @@ class EDData(metaclass=SingletonMeta):
         # self.system_names = {system.name.lower(): system for system in System.objects.all()}
         # self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
         self.live_listener = LiveListener(ed_data=self)
+        threading.Thread(target=self.update_cache).start()
+        print("Created new EDData object.")
 
     def start_live_listener(self):
         self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
