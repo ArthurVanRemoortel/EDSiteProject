@@ -150,7 +150,8 @@ class LiveListener:
                 with transaction.atomic():
                     for ll in to_update_listings:
                         # LiveListing.objects.filter(id=ll.id).update(['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live'])
-                        LiveListing.objects.filter(id=ll.id).update(**{key: value for key, value in model_to_dict(ll).items() if key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']})
+                        existing_ll = LiveListing.objects.select_for_update().filter(id=ll.id)
+                        existing_ll.update(**{key: value for key, value in model_to_dict(ll).items() if key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']})
                 # print(f"Took {time.time() - t0}")
                 to_update_listings = []
             if new_listings:
