@@ -52,7 +52,7 @@ def systems(request):
     if request.method == 'GET':
         form = SystemsForm()
         form.fields['only_populated'].initial = 'no'
-        context['systems'] = System.objects.order_by('id')[:40]
+        context['systems'] = System.objects.order_by('id')
     else:
         form = SystemsForm(request.POST)
         search = form.data['search']
@@ -106,7 +106,7 @@ def stations(request):
 
         # TODO: Add star_distance and system_distance filter.
 
-        context['stations'] = filtered_stations
+        context['stations'] = filtered_stations[:40]
     context['form'] = form
     return render(request, 'EDSite/stations.html', base_context(request) | context)
 

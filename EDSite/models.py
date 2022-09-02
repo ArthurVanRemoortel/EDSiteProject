@@ -164,6 +164,8 @@ class Station(models.Model):
 
     @property
     def modified_string(self):
+        if not self.modified:
+            return "Unknown"
         age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
         if age_delta.seconds < 3600:
             return f"{int(age_delta.seconds / 60)} minutes"

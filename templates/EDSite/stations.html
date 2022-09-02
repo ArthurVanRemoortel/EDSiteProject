@@ -151,7 +151,7 @@
                                     <a href="/stations/{{ station.id }}"> {{ station.name }}</a>
                                 {% endwith %}
                             </th>
-                            <th> <a href="/systems/{{ listing.station.system.id }}">{{ listing.station.system.name }}</a> </th>
+                            <th> <a href="/systems/{{ station.system.id }}">{{ station.system.name }}</a> </th>
                             <th> {{ station.pad_size }} </th>
                             <th> {{ station.ls_from_star }} <span class="unit">Ls</span> </th>
                             <th> ? </th>
