@@ -163,6 +163,16 @@ class Station(models.Model):
         return self.listings.filter(Q(demand_units__gt=0))
 
     @property
+    def modified_string(self):
+        age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
+        if age_delta.seconds < 3600:
+            return f"{int(age_delta.seconds / 60)} minutes"
+        elif age_delta.days < 1:
+            return f"{int(age_delta.seconds / 3600)} hours"
+        else:
+            return f"{age_delta.days} days"
+
+    @property
     def is_live(self):
         return self.data_age_days != -1 and self.data_age_days * 24 * 60 < IS_LIVE_MINUTES
 

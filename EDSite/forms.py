@@ -67,25 +67,60 @@ class SystemsForm(forms.Form):
         ),
         required=False,
     )
-
-
     reference_system = forms.CharField(
         widget=forms.TextInput(
             attrs={'class': 'input'}
         ),
         required=False,
     )
-
     only_populated = forms.ChoiceField(
         widget=forms.Select(
             attrs={
-                # 'style': 'width: 100%'
+                'class': 'input'
             }
         ),
         required=False,
         choices=YES_NO_CHOICES,
     )
 
+
+class StationsForm(forms.Form):
+    search = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input'}
+        ),
+        required=False,
+    )
+    reference_system = forms.CharField(
+        widget=forms.TextInput(
+            attrs={'class': 'input'}
+        ),
+        required=False,
+    )
+    include_fleet_carriers = forms.ChoiceField(
+        required=False,
+        choices=YES_NO_CHOICES,
+    )
+    include_planetary = forms.ChoiceField(
+        required=False,
+        choices=YES_NO_CHOICES,
+    )
+    landing_pad_size = forms.ChoiceField(
+        required=False,
+        choices=LANDING_PAD_CHOICES,
+    )
+    star_distance = forms.CharField(
+        widget=forms.NumberInput(
+            attrs={'class': 'input'},
+        ),
+        required=False,
+    )
+    system_distance = forms.CharField(
+        widget=forms.NumberInput(
+            attrs={'class': 'input'},
+        ),
+        required=False,
+    )
 
 
 class CarrierMissionForm(forms.Form):

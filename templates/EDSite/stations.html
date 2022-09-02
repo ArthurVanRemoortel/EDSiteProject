@@ -1,11 +1,168 @@
 <!DOCTYPE html>
 <html lang="en">
 {% extends 'EDSite/base.html'%}
-<head>
-    <meta charset="UTF-8">
-    <title>EDSite</title>
-</head>
-<body>
+{% block title %}
+    Stations
+{% endblock %}
 
-</body>
+{% block content %}
+
+    <div class="container" style="padding-top: 1em">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li>
+                    <a href="/">
+                        <span class="icon is-small">
+                            <i class="fas fa-home" aria-hidden="true"></i>
+                        </span>
+                        <span>Home</span></a></li>
+                    <li class="is-active"> <a href="#">Stations</a></li>
+            </ul>
+        </nav>
+
+
+        <h2 class="title is-2 is-spaced bd-anchor-title">
+            Stations
+        </h2>
+
+    <article class="panel is-info mt-6">
+            <p class="panel-heading">
+                Search
+            </p>
+            <form action="{% url 'stations' %}" method="post">
+                {% csrf_token %}
+                <div class="panel-block">
+                    <table class="table is-fullwidth">
+                        <thead style="">
+                            <tr>
+                                <th style="width:33%"></th>
+                                <th style="width:33%"></th>
+                                <th style="width:33%"></th>
+                            </tr>
+                        </thead>
+                        <tbody class="">
+
+                        <tr>
+                            <td colspan=3>
+                                <div class="field">
+                                    <label class="label">Search</label>
+                                    <div class="control">
+                                        {{ form.search }}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+
+                        <tr>
+                            <td colspan=1>
+                                <div class="field">
+                                    <label class="label">Include Carriers</label>
+                                    <div class="select-wide select is-primary">
+                                        {{ form.include_fleet_carriers }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td colspan=1>
+                                <div class="field">
+                                    <label class="label">Include Planetary</label>
+                                    <div class="select-wide select is-primary">
+                                        {{ form.include_planetary }}
+                                    </div>
+                                </div>
+                            </td>
+                            <td colspan=1>
+                                <div class="field">
+                                    <label class="label">Pad Size</label>
+                                    <div class="select-wide select is-primary">
+                                        {{ form.landing_pad_size }}
+                                    </div>
+                                </div>
+                            </td>
+                        <tr>
+
+                        <tr>
+                            <td colspan=3>
+                                <div class="field">
+                                    <label class="label">Reference System</label>
+                                    <div class="control">
+                                        {{ form.reference_system}}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan=1>
+                                <div class="field">
+                                    <label class="label">System Distance</label>
+                                    <div class="control">
+                                        {{ form.system_distance}}
+                                    </div>
+                                </div>
+                            </td>
+                            <td colspan=1>
+                                <div class="field">
+                                    <label class="label">Star System</label>
+                                    <div class="control">
+                                        {{ form.star_distance}}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+
+                        <tr>
+                            <td>
+                                <div class="field">
+                                    <div class="control">
+                                        <button type="submit" class="button is-link">Submit</button>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </form>
+        </article>
+
+        <article class="panel is-info mb-6 mt-6">
+            <p class="panel-heading">Results</p>
+
+            <div class="panel-block">
+                <table class="table is-hoverable is-fullwidth ">
+                    <thead>
+                    <tr>
+                        <th class="commodity_th"><abbr title="Station">Station</abbr></th>
+                        <th><abbr title="System">System</abbr></th>
+                        <th><abbr title="Pad">Pad</abbr></th>
+                        <th><abbr title="Star Distance">Star Distance</abbr></th>
+                        <th><abbr title="Reference Distance">Reference Distance</abbr></th>
+                        <th><abbr title="Age">Age</abbr></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for station in stations %}
+                        <tr>
+                            <th>
+                                {% with station_type=station.station_type.name %}
+                                    {% include 'EDSite/snippets/station_type.html' %}
+                                    <a href="/stations/{{ station.id }}"> {{ station.name }}</a>
+                                {% endwith %}
+                            </th>
+                            <th> <a href="/systems/{{ listing.station.system.id }}">{{ listing.station.system.name }}</a> </th>
+                            <th> {{ station.pad_size }} </th>
+                            <th> {{ station.ls_from_star }} <span class="unit">Ls</span> </th>
+                            <th> ? </th>
+                            <th> {{ station.modified_string }} </th>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
+    </div>
+{% endblock %}
 </html>

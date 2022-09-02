@@ -7,7 +7,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 # import EDSite.ed_data
 from EDSite.tools.ed_data import EDData
-from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionForm, SystemsForm
+from EDSite.forms import CommodityForm, SignupForm, LoginForm, CarrierMissionForm, SystemsForm, StationsForm
 from EDSite.helpers import make_timezone_aware, list_to_columns
 from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, System, CarrierMission
 from EDSiteProject import settings
@@ -51,7 +51,7 @@ def systems(request):
     context = {}
     if request.method == 'GET':
         form = SystemsForm()
-        form.fields['only_populated'].initial = 'No'
+        form.fields['only_populated'].initial = 'no'
         context['systems'] = System.objects.order_by('id')[:40]
     else:
         form = SystemsForm(request.POST)
@@ -59,32 +59,54 @@ def systems(request):
         ref_system_name = form.data['reference_system']
         only_populated = form.data['only_populated'] == 'yes'
         if search:
-            filtered_systems = System.objects.filter(name__icontains=search)
+            filtered_systems = System.objects.filter(name__icontains=search).order_by('id')
         else:
-            filtered_systems = System.objects.all()
+            filtered_systems = System.objects.all().order_by('id')
+        if only_populated:
+            filtered_systems = filtered_systems.annotate(num_stations=Count('stations')).filter(num_stations__gt=0)
         context['systems'] = filtered_systems[:40]
     context['form'] = form
     return render(request, 'EDSite/systems.html', base_context(request) | context)
 
 
 def system(request, system_id):
-    system = System.objects.get(pk=system_id)
-
     context = {
-        'system': system,
+        'system': System.objects.get(pk=system_id),
     }
-
     return render(request, 'EDSite/system.html', base_context(request) | context)
 
 
 def stations(request):
     context = {}
     if request.method == 'GET':
-        form = SystemsForm()
+        form = StationsForm()
         context['stations'] = Station.objects.order_by('id')[:40]
     else:
-        form = SystemsForm(request.POST)
-        context['stations'] = Station.objects.order_by('id')[:40]
+        form = StationsForm(request.POST)
+        search = form.data['search']
+        ref_system_name = form.data['reference_system']
+        include_fleet_carriers = form.data['include_fleet_carriers'] == 'yes'
+        include_planetary = form.data['include_planetary'] == 'yes'
+        landing_pad_size = form.data['landing_pad_size']
+        star_distance = form.data['star_distance']
+        system_distance = form.data['system_distance']
+
+        if search:
+            filtered_stations = Station.objects.filter(name__icontains=search).order_by('id')
+        else:
+            filtered_stations = Station.objects.order_by('id').all()
+        if not include_planetary:
+            filtered_stations = filtered_stations.filter(Q(planetary=0))
+        if not include_fleet_carriers:
+            filtered_stations = filtered_stations.filter(Q(fleet=0))
+        if landing_pad_size == "M":
+            filtered_stations = filtered_stations.exclude(Q(pad_size='S'))
+        elif landing_pad_size == "L":
+            filtered_stations = filtered_stations.filter(Q(station__pad_size='L'))
+
+        # TODO: Add star_distance and system_distance filter.
+
+        context['stations'] = filtered_stations
     context['form'] = form
     return render(request, 'EDSite/stations.html', base_context(request) | context)
 

@@ -407,7 +407,6 @@ class EDData(metaclass=SingletonMeta):
                         best_buys[live_listing.commodity_id] = live_listing
 
         for commodity in commodities:
-
             if best_buys[commodity.id] and (best_buys[commodity.id].demand_units == 0):
                 best_buys[commodity.id] = None
             if best_sells[commodity.id] and best_sells[commodity.id].supply_units == 0:

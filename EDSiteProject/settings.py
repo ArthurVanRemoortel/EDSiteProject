@@ -118,8 +118,6 @@ DATABASES = {
         'PORT': DATABASE_PORT,
     }
 }
-
-print("REDIS_HOST =", REDIS_HOST)
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
