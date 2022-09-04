@@ -7,6 +7,8 @@ import zlib
 from collections import defaultdict, deque, namedtuple
 import datetime
 from pprint import pprint
+
+from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import model_to_dict
 
 import zmq
@@ -25,9 +27,16 @@ from tradedangerous.tradedb import Category as TDCategory
 
 from EDSite.helpers import SingletonMeta, EDDatabaseState, make_timezone_aware, StationType, difference_percent, \
     display_top_memory, queryset_iterator, chunked_queryset, chunks, chunks_no_overlap, update_item_dict
+try:
+    from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing, \
+        CarrierMission
+except ImproperlyConfigured:
+    import django
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'EDSiteProject.settings')
+    django.setup()
 
-from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing, \
-    CarrierMission
+    from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing, \
+        CarrierMission
 from django.core.cache import cache
 
 from EDSite.tools.data_listener import LiveListener
@@ -277,7 +286,6 @@ class EDData(metaclass=SingletonMeta):
         # min_station_id, max_station_id = list(tdb.cur.execute('SELECT (min("station_id"), max("station_id")) FROM StationItem'))
         td_listings_station_ids = sorted([r[0] for r in tdb.cur.execute('SELECT "station_id" FROM StationItem')])
         TD_PART_SIZE = 200000
-        print("-----------")
         new_listings = []
         total_new_listings = 0
         new_historic_listings = []
@@ -286,6 +294,9 @@ class EDData(metaclass=SingletonMeta):
         updated_listings = []
         total_updated_listings = 0
         total_updated_carriers = 0
+
+        visited_listings = set()
+        deleted_listings = []
         # station_ids_part_start = min_station_id
         for station_ids_chunk in tqdm(chunks_no_overlap(td_listings_station_ids, TD_PART_SIZE)):
             min_station_td_id, max_station_td_id = min(station_ids_chunk), max(station_ids_chunk)
@@ -316,8 +327,12 @@ class EDData(metaclass=SingletonMeta):
                     #     total_updated_carriers += 1
                     station_id = station.id
                     com_id = commodities_td_to_django_ids[item_td_id]
+
+                    visited_listings.add((station_id, com_id))
+
                     try:
                         existing_live_listing = existing_live_listings[(station_id, com_id)]
+                        visited_listings.add(existing_live_listing.id)
                         if modified != existing_live_listing.modified:
                             if not station.fleet:
                                 if (difference_percent(existing_live_listing.demand_price, demand_price) > 10
@@ -355,6 +370,14 @@ class EDData(metaclass=SingletonMeta):
                 else:
                     # Station not found.
                     ...
+
+            to_delete = []
+            for existing_listing_key, existing_listing in existing_live_listings:
+                if existing_listing_key not in visited_listings:
+                    print("Should delete: ", existing_listing_key)
+                    deleted_listings.append(existing_listing)
+
+
         print(f"New {len(new_listings)}, {len(updated_listings)}, {len(new_historic_listings)}, {ignored_historic_listings}")
         if new_listings:
             print("Saving new listings")
@@ -422,7 +445,6 @@ class EDData(metaclass=SingletonMeta):
         t0 = time.time()
         tdb = None
         if data:
-            tdb = self.tdb
             t1 = time.time()
             self.update_tradedangerous_database()
             print(f"Updating TradeDangerous took {time.time() - t1} seconds")
@@ -461,19 +483,7 @@ class EDData(metaclass=SingletonMeta):
     def get_avg_buying_items(self):
         return self.tdb.getAverageBuying()
 
-    # def lookup_item(self, item_name) -> Commodity | None:
-    #     td_item = self.tdb.lookupItem(item_name)
-    #     if td_item:
-    #         return self.tdb.lookupItem(item_name)
-    #     else:
-    #         return None
-    #
-    # def get_item(self, item_id) -> Commodity:
-    #     return Commodity.objects.get(pk=item_id)
-    #
-    #
-    # def get_categories(self):
-    #     return CommodityCategory.objects.all()
-    #     # return {
-    #     #     category_value.dbname: {item.ID: CommodityWrapper(item) for item in category_value.items} for category_key, category_value in self.tdb.categories()
-    #     # }
+
+if __name__ == '__main__':
+    os.environ.setdefault('TD_EDDB', "../../data")
+    EDData().update_tradedangerous_database()

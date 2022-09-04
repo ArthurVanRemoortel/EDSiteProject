@@ -33,6 +33,7 @@ TODO:
     - https://docs.djangoproject.com/en/4.0/topics/auth/customizing/
   - Integration with the official API for user data.
   - Create missions
+  - Image Gallery
 - Fixes:
   - Auto background updates
   - Testing

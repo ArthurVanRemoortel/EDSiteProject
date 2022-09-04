@@ -211,6 +211,8 @@ class LiveListing(models.Model):
         return self.supply_units > minimum
 
     def is_high_demand(self, minimum=0):
+        if self.station.station_type == StationType.FLEET:
+            return self.demand_units > 200
         return self.demand_units > minimum
 
     @property

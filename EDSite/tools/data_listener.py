@@ -7,6 +7,7 @@ import zlib
 from collections import defaultdict, deque, namedtuple
 from datetime import datetime
 from pprint import pprint
+from urllib import request
 
 import zmq
 from django.db import transaction
@@ -29,14 +30,25 @@ ALT_COMMODITY_NAMES = {
 
 FAILED_COMMODITIES_LOG = set()
 
-with open('EDSite/tools/commodity.csv', newline='') as csvfile:
-    edcd_dict = csv.DictReader(csvfile, 'utf-8')
 
-    for line in edcd_dict:
+def update_alt_commodity_names():
+    edcd_source = 'https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv'
+    edcd_csv = request.urlopen(edcd_source)
+    for line in iter(csv.DictReader(codecs.iterdecode(edcd_csv, 'utf-8'))):
         try:
-            ALT_COMMODITY_NAMES[line['t'].lower()] = line['-'].lower().replace(' ', '').replace('-', '')
-        except KeyError:
+            ALT_COMMODITY_NAMES[line['symbol'].lower()] = line['name'].lower().replace(' ', '').replace('-', '')
+        except KeyError as e:
             ...
+
+update_alt_commodity_names()
+# with open('EDSite/tools/commodity.csv', newline='') as csvfile:
+#     edcd_dict = csv.DictReader(csvfile, 'utf-8')
+#
+#     for line in edcd_dict:
+#         try:
+#             ALT_COMMODITY_NAMES[line['t'].lower()] = line['-'].lower().replace(' ', '').replace('-', '')
+#         except KeyError:
+#             ...
 
 
 class MarketPriceEntry(namedtuple('MarketPriceEntry', [
