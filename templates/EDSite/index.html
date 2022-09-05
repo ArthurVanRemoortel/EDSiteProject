@@ -1,11 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
 {% extends 'EDSite/base.html'%}
-<head>
-    <meta charset="UTF-8">
-    <title>EDSite</title>
-</head>
-<body>
+{% block title %}
+    Home
+{% endblock %}
 
-</body>
+{% block content %}
+    <div class="container" style="padding-top: 2em">
+        <div class="columns is-desktop is-centered">
+            <div class="column">
+                <div class="card panel">
+                    <a href="{% url 'systems' %}">
+                        <div class="card-content">
+                            <p class="title is-primary-text-color">
+                                Systems
+                            </p>
+                            <div class="content is-white">
+                                Browse systems and search for whatever you are looking for.
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="card panel">
+                    <a href="{% url 'stations' %}">
+                        <div class="card-content">
+                            <p class="title is-primary-text-color">
+                                Stations
+                            </p>
+                            <div class="content is-white">
+                                Browse stations and carriers and search for whatever you are looking for.
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="column">
+                <div class="card panel">
+                    <a href="{% url 'commodities' %}">
+                        <div class="card-content">
+                            <p class="title is-primary-text-color">
+                                Commodities
+                            </p>
+                            <div class="content is-white">
+                                Browse commodities and find the best trade deals with ease.
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+        <div class="columns is-desktop is-centered">
+            <div class="column">
+                <div class="card panel">
+                    <a href="{% url 'trade-routes' %}">
+                        <div class="card-content">
+                            <p class="title is-primary-text-color">
+                                Trade Routes
+                            </p>
+                            <div class="content is-white">
+                                Find profitable trade routes in your area.
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="column">
+                <div class="card panel">
+                    <a href="{% url 'carrier-missions' tab='all' %}">
+                        <div class="card-content">
+                            <p class="title is-primary-text-color">
+                                Carrier Missions
+                            </p>
+                            <div class="content is-white">
+                                Find or create your own carrier missions.
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
 </html>

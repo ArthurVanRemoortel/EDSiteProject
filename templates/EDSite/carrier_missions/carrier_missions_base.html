@@ -41,13 +41,13 @@
 {#                    </a>#}
 {#                </li>#}
                 <li class="{% if tab == 'all' %}is-active{% endif %}">
-                    <a href="/planners/carrier-missions/all">
+                    <a href="{% url 'carrier-missions' tab='all' %}">
                         <span class="icon is-small"><i class="fas fa-shuttle-space" aria-hidden="true"></i></span>
                         <span>All Missions</span>
                     </a>
                 </li>
                 <li class="{% if tab == 'my' %}is-active{% endif %}">
-                    <a href="/planners/carrier-missions/my">
+                    <a href="{% url 'carrier-missions' tab='my' %}">
                         <span class="icon is-small"><i class="fa-solid fa-people-group" aria-hidden="true"></i></span>
                         <span>My Missions</span>
                     </a>
