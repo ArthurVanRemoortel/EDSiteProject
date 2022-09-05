@@ -40,7 +40,9 @@ def update_alt_commodity_names():
         except KeyError as e:
             ...
 
+
 update_alt_commodity_names()
+
 # with open('EDSite/tools/commodity.csv', newline='') as csvfile:
 #     edcd_dict = csv.DictReader(csvfile, 'utf-8')
 #
@@ -148,47 +150,34 @@ class LiveListener:
         to_update_listings = []
         to_update_stations = []
         new_stations = []
-        new_listings = []
+        new_listings: {Station, [LiveListing]} = {}
         new_historic_listings = []
-        # carriers_of_interest = self.ed_data.get_carriers_of_interest() # TODO: Update this regularly.
+        carriers_of_interest = self.ed_data.get_carriers_of_interest() # TODO: Update this regularly.
         while self.active:
             if self.paused:
                 time.sleep(1)
                 continue
             if len(self.data_queue) > 5:
                 print(f'WARNING: {len(self.data_queue)} items on queue.')
-            if to_update_listings:
-                t0 = time.time()
-                # print(f"Should update {len(to_update_listings)} live_listings")
-                with transaction.atomic():
-                    for ll in to_update_listings:
-                        # LiveListing.objects.filter(id=ll.id).update(['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live'])
-                        existing_ll = LiveListing.objects.select_for_update().filter(id=ll.id)
-                        existing_ll.update(**{key: value for key, value in model_to_dict(ll).items() if key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']})
-                # print(f"Took {time.time() - t0}")
-                to_update_listings = []
+
+
             if new_listings:
-                t0 = time.time()
-                # print(f"Should create {len(new_listings)} new live_listings")
-                LiveListing.objects.bulk_create(new_listings)
-                # print(f"Took {time.time() - t0}")
-                new_listings = []
+                for station, listings in new_listings.items():
+                    if station.name == "K7Q-BQL":
+                        print(f"Updating station listing of {station}({station.id})({station.tradedangerous_id}) to {len(listings)}")
+                    station.set_listings(listings)
+                new_listings = {}
             if to_update_stations:
                 with transaction.atomic():
                     for station in to_update_stations:
                         Station.objects.filter(id=station.id).update(system_id=station.system_id)
-                # Station.objects.bulk_update(list(to_update_stations), ['system_id'])
-                # print(f"Took {time.time() - t0}")
-                # print(f"Updated {len(to_update_stations)} stations.")
                 to_update_stations = []
-            if new_historic_listings:
-                HistoricListing.objects.bulk_create(new_historic_listings)
-
             try:
                 entry = self.data_queue.popleft()
             except IndexError:
                 time.sleep(1)
                 continue
+
             # print('-------------------------------------------------')
             # Get the station_is using the system and station names.
             system_name = entry.system.lower()
@@ -222,7 +211,8 @@ class LiveListener:
                             # TODO: New systems not in db yet.
                         break
             if station:
-                station_listings = {listing.commodity_id: listing for listing in LiveListing.objects.filter(station_tradedangerous_id=station.tradedangerous_id)}
+                # station_listings = {listing.commodity_id: listing for listing in LiveListing.objects.filter(station_tradedangerous_id=station.tradedangerous_id)}
+                new_listings[station] = []
                 for commodity_entry in commodities:
                     commodity_name = commodity_entry['name'].lower()
                     if (commodity_entry['sellPrice'] == 0 and commodity_entry['buyPrice'] == 0) or (commodity_entry['demand'] == 0 and commodity_entry['stock'] == 0):
@@ -236,37 +226,24 @@ class LiveListener:
                                 fixed_name += 's'
                             commodity = self.commodity_names.get(fixed_name)
                     if commodity:
-                        live_listings: LiveListing = station_listings.get(commodity.id)
+                    #     live_listings: LiveListing = station_listings.get(commodity.id)
                         demand_price = commodity_entry['sellPrice']
                         supply_price = commodity_entry['buyPrice']
                         demand_units = commodity_entry['demand']
                         supply_units = commodity_entry['stock']
-                        if live_listings:
-                            live_listings.demand_price = demand_price
-                            live_listings.supply_price = supply_price
-                            live_listings.demand_units = demand_units
-                            live_listings.supply_units = supply_units
-                            live_listings.modified = modified
-                            live_listings.from_live = 1
-                            to_update_listings.append(live_listings)
-                            if not station.fleet:
-                                if (difference_percent(live_listings.demand_price, demand_price) > 10
-                                        or difference_percent(live_listings.supply_price, supply_price) > 10):
-                                    new_historic_listings.append(HistoricListing.from_live(live_listings))
-                        else:
-                            live_listing = LiveListing(
-                                commodity_id=commodity.id,
-                                commodity_tradedangerous_id=commodity.tradedangerous_id,
-                                station_id=station.id,
-                                station_tradedangerous_id=station.tradedangerous_id,
-                                demand_price=demand_price,
-                                demand_units=demand_units,
-                                supply_price=supply_price,
-                                supply_units=supply_units,
-                                modified=modified,
-                                from_live=1
-                            )
-                            new_listings.append(live_listing)
+                        live_listing = LiveListing(
+                            commodity_id=commodity.id,
+                            commodity_tradedangerous_id=commodity.tradedangerous_id,
+                            station_id=station.id,
+                            station_tradedangerous_id=station.tradedangerous_id,
+                            demand_price=demand_price,
+                            demand_units=demand_units,
+                            supply_price=supply_price,
+                            supply_units=supply_units,
+                            modified=modified,
+                            from_live=1
+                        )
+                        new_listings[station].append(live_listing)
                     else:
                         if commodity_name not in FAILED_COMMODITIES_LOG:
                             FAILED_COMMODITIES_LOG.add(commodity_name)

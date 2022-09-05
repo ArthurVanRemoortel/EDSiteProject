@@ -43,22 +43,18 @@
                 </a>
 
                 <div class="navbar-dropdown">
-                    <a class="navbar-item" href="/systems">
+                    <a class="navbar-item" href="{% url 'systems' %}">
                         Systems
                     </a>
-                    <a class="navbar-item" href="/stations">
+                    <a class="navbar-item" href="{% url 'stations' %}">
                         Stations
                     </a>
                     <hr class="navbar-divider">
-                    <a class="navbar-item" href="/commodities">
+                    <a class="navbar-item" href="{% url 'commodities' %}">
                         Commodities
                     </a>
-                    <a class="navbar-item" href="/rares">
+                    <a class="navbar-item" href="{% url 'rares' %}">
                         Rare Items
-                    </a>
-                    <hr class="navbar-divider">
-                    <a class="navbar-item" href="/routes">
-                        Trade Routes
                     </a>
                 </div>
             </div>
@@ -70,7 +66,7 @@
 
                 <div class="navbar-dropdown">
                     <a class="navbar-item" href="#">
-                        Route Planner
+                        Trade Routes
                     </a>
                     <a class="navbar-item" href="{% url 'carrier-missions' tab='all' %}">
                         Carrier Missions
@@ -139,7 +135,7 @@
     <footer class="footer column is-narrow box">
       <div class="content has-text-centered">
         <p>
-            <strong> <a href="https://www.elitedangerous.com/">Elite: Dangerous</a></strong> game tools by <strong><a href="https://github.com/ArthurVanRemoortel">Arthur Van Remoortel<i class="fa-brands fa-github"></i></a></strong>
+            <strong> <a href="https://www.elitedangerous.com/">Elite: Dangerous</a></strong> game tools by <strong><a href="https://github.com/ArthurVanRemoortel">Arthur Van Remoortel <i class="fa-brands fa-github"></i></a></strong>
             <span>
                 The source-code is available on <a href="https://github.com/ArthurVanRemoortel/EDSiteProject"> GitHub <i class="fa-brands fa-github"></i></a>
             </span>
@@ -200,7 +196,6 @@
     function successFunction(msg) {
 
     }
-
 </script>
 {% block javascript %}
 {% endblock javascript %}

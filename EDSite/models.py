@@ -2,11 +2,14 @@ import random
 
 from django.db import models
 from django.db.models import Q
-from EDSite.helpers import StationType
+from EDSite.helpers import StationType, difference_percent
 from django.core.cache import cache
 import datetime
 from django.conf import settings
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
+from django.db import transaction
+from pprint import pprint
+from django.forms.models import model_to_dict
 
 IS_LIVE_MINUTES = 60
 
@@ -174,12 +177,60 @@ class Station(models.Model):
         else:
             return f"{age_delta.days} days"
 
+    def set_listings(self, listings_list: ['LiveListing']):
+        # with transaction.atomic():
+        exising_listings = {ll.commodity_id: ll for ll in LiveListing.objects.filter(station_tradedangerous_id=self.tradedangerous_id).all()}
+        # To delete is everything minus updated.
+        updated_listings = []
+        new_listings = []
+        new_historic_listings = []
+
+        new_ll: LiveListing
+        for new_ll in listings_list:
+            existing_match: LiveListing = exising_listings.get(new_ll.commodity_id)
+            if existing_match:
+                # Update an existing listing
+                if not self.fleet:
+                    if (difference_percent(existing_match.demand_price, new_ll.demand_price) > 10
+                            or difference_percent(existing_match.supply_price, new_ll.supply_price) > 10):
+                        new_historic_listings.append(HistoricListing.from_live(existing_match))
+
+                existing_match.demand_price = new_ll.demand_price
+                existing_match.demand_units = new_ll.demand_units
+                existing_match.supply_price = new_ll.supply_price
+                existing_match.supply_units = new_ll.supply_units
+                existing_match.modified     = new_ll.modified
+                existing_match.from_live    = new_ll.from_live
+                updated_listings.append(existing_match)
+            else:
+                # It's a new listing.
+                new_listings.append(new_ll)
+
+        if updated_listings:
+            # print("Updating:", len(updated_listings))
+            with transaction.atomic():
+                for updated_ll in updated_listings:
+                    e = LiveListing.objects.select_for_update().filter(id=updated_ll.id)
+                    e.update(
+                        **{key: value for key, value in model_to_dict(updated_ll).items() if
+                           key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
+                                   'from_live']}
+                    )
+
+        if updated_listings:
+            # print(f"Deleting ll: {len(exising_listings) - len(updated_listings)}")
+            ld = LiveListing.objects.filter(Q(station_tradedangerous_id=self.tradedangerous_id) & ~Q(pk__in=[ll.id for ll in updated_listings])).delete()
+
+        if new_listings:
+            LiveListing.objects.bulk_create(new_listings)
+
+        if new_historic_listings:
+            # print("Historic: ", len(new_historic_listings))
+            HistoricListing.objects.bulk_create(new_historic_listings)
+
     @property
     def is_live(self):
         return self.data_age_days != -1 and self.data_age_days * 24 * 60 < IS_LIVE_MINUTES
-
-    # def delete(self, using=None, keep_parents=False):
-    #     super(Station, self).delete(using, keep_parents)
 
     def __str__(self):
         return f'{self.fullname}'

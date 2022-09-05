@@ -213,8 +213,11 @@ class EDData(metaclass=SingletonMeta):
         for station_tradedangerous_id, station in stations.items():
             if station_tradedangerous_id not in td_stations:
                 deleted_stations_ids.append(station.id)
-                for hist in station.historic_listings.all():
-                    deleted_historic_ids.append(hist.id)
+                # print("Deleting: ", station, station.id, station.tradedangerous_id)
+                # hists = HistoricListing.objects.filter(station_id=station.id).all()
+                # for hist in hists:
+                #     print(hist.id)
+                #     deleted_historic_ids.append(hist.id)
 
         if new_stations:
             Station.objects.bulk_create(new_stations)
@@ -222,10 +225,17 @@ class EDData(metaclass=SingletonMeta):
 
         if deleted_stations_ids:
             # hist = HistoricListing.objects.filter(station_id__in=deleted_stations_ids).all()
-            print("Hist=", len(deleted_historic_ids))
-            HistoricListing.objects.filter(pk__in=deleted_historic_ids).delete()
-            Station.objects.filter(pk__in=deleted_stations_ids).delete()
-            print(f"Deleted {len(deleted_stations_ids)} stations.")
+            with transaction.atomic():
+                for station_id in deleted_historic_ids:
+                    print(f"Deleting station: {station_id}")
+                    Station.objects.filter(pk=station_id).delete()
+            # print("Hist ids =", len(deleted_historic_ids))
+            # if deleted_historic_ids:
+            #     hist = HistoricListing.objects.filter(pk__in=deleted_historic_ids).delete()
+            #     print("Deleting hist: ", len(hist))
+            # # hist.delete()
+            # Station.objects.filter(pk__in=deleted_stations_ids).delete()
+            # print(f"Deleted {len(deleted_stations_ids)} stations.")
 
         if updated_stations:
             print(f"Trying to update {len(updated_stations)} stations...")
@@ -378,13 +388,13 @@ class EDData(metaclass=SingletonMeta):
                     # Station not found.
                     ...
 
-            to_delete = []
             for existing_listing_key, existing_listing in existing_live_listings.items():
                 if existing_listing_key not in visited_listings:
                     deleted_listings_ids.append(existing_listing.id)
 
 
-        print(f"New {len(new_listings)}, {len(updated_listings)}, {len(new_historic_listings)}, {ignored_historic_listings}")
+
+        print(f"new={len(new_listings)}, up={len(updated_listings)}, del={len(deleted_listings_ids)}, hist={len(new_historic_listings)}, ignored={ignored_historic_listings}")
         if new_listings:
             print("Saving new listings")
             t0 = time.time()
@@ -419,6 +429,7 @@ class EDData(metaclass=SingletonMeta):
             print(f"Deleting {len(deleted_listings_ids)} listings.")
             for chunk in tqdm(list(chunks(deleted_listings_ids, 10000))):
                 LiveListing.objects.filter(pk__in=chunk).delete()
+
         db.reset_queries()
         del updated_listings
         print(f"Saving updated listings: {time.time() - t0}")
