@@ -130,8 +130,21 @@
     </div>
 </nav>
 
-{% block content %}
-{% endblock %}
+<div class="page-wrapper">
+    {% block content %}
+    {% endblock %}
+
+    <footer class="footer column is-narrow box">
+      <div class="content has-text-centered">
+        <p>
+            <strong> <a href="https://www.elitedangerous.com/">Elite: Dangerous</a></strong> game tools by <strong><a href="https://github.com/ArthurVanRemoortel">Arthur Van Remoortel <i class="fa-brands fa-github"></i></a></strong>
+            <span>
+                The source-code is available on <a href="https://github.com/ArthurVanRemoortel/EDSiteProject"> GitHub <i class="fa-brands fa-github"></i></a>
+            </span>
+        </p>
+      </div>
+    </footer>
+</div>
 
 <script>
     $("#reloadDataButton").click(function(event) {
@@ -185,7 +198,6 @@
     function successFunction(msg) {
 
     }
-
 
 </script>
 {% block javascript %}
