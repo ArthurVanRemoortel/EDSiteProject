@@ -132,15 +132,15 @@ def commodities(request):
     return render(request, 'EDSite/commodities.html', base_context(request) | context)
 
 
-def commodity(request, item_id):
-    commodity = Commodity.objects.get(pk=item_id)
+def commodity(request, commodity_id):
+    commodity = Commodity.objects.get(pk=commodity_id)
     # pprint(EDData().test(commodity_id=commodity.id))
     listings: [LiveListing] = []
     if request.method == 'GET':
         form = CommodityForm()
         form.fields['buy_or_sell'].initial = 'sell'
         form.fields['landing_pad_size'].initial = 'S'
-        listings = LiveListing.objects.filter(commodity_id=item_id).filter(Q(demand_units__gt=0)).order_by('-demand_price')[:30]
+        listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(demand_units__gt=0)).order_by('-demand_price')[:30]
     else:  # POST
         form = CommodityForm(request.POST)
         if form.is_valid():
@@ -152,9 +152,9 @@ def commodity(request, item_id):
             minimum_units = form.data['minimum_units'] if form.data['minimum_units'] else 0
             buy_or_sell = form.data['buy_or_sell']
             if buy_or_sell == 'sell':
-                listings = LiveListing.objects.filter(commodity_id=item_id).filter(Q(demand_units__gt=minimum_units))
+                listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(demand_units__gt=minimum_units))
             else:
-                listings = LiveListing.objects.filter(commodity_id=item_id).filter(Q(supply_units__gt=minimum_units))
+                listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(supply_units__gt=minimum_units))
             if not include_planetary:
                 listings = listings.filter(Q(station__planetary=0))
             if not include_fleet_carriers:
@@ -175,7 +175,7 @@ def commodity(request, item_id):
         'listings': listings,
         'form': form
     }
-    # print(cache.get(f'best_{item_id}'))
+    # print(cache.get(f'best_{commodity_id}'))
     return render(request, 'EDSite/commodity.html', base_context(request) | context)
 
 

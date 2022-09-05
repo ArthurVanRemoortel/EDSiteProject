@@ -18,7 +18,7 @@ urlpatterns = [
     path('stations/<int:station_id>', views.station, name='station'),
     path('systems/<int:system_id>', views.system, name='system'),
     path('commodities', views.commodities, name='commodities'),
-    path('commodities/<int:item_id>', views.commodity, name='commodity'),
+    path('commodities/<int:commodity_id>', views.commodity, name='commodity'),
     path('rares', views.rares, name='rares'),
 
     path('debug_reload', views.debug_reload, name='debug_reload'),

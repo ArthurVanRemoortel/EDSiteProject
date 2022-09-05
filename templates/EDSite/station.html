@@ -89,7 +89,7 @@
                             {% if listing.supply_units or listing.demand_units %}
                                 <tr>
                                     <th> <a href="/commodities/{{ listing.commodity_id }}">{{ listing.commodity.name }}</a> </th>
-                                    <th> - </th>
+                                    <th> <i class="fa-solid fa-chart-column is-primary-text-color"></i> </th>
                                     {% if listing.supply_units > 0 %}
                                         <th> <span class="unit">CR</span> {{ listing.supply_price }} </th>
                                         <th> {{ listing.supply_units }} </th>

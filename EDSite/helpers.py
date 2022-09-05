@@ -157,10 +157,10 @@ def update_item_dict():
     for line in iter(edcd_rare_dict):
         db_name[line['symbol'].lower()] = line['id']
 
-    # We'll use this to get the item_id from the fdev_id because it's faster than a database lookup.
+    # We'll use this to get the commodity_id from the fdev_id because it's faster than a database lookup.
     item_ids = dict()
 
-    # Rare items don't have an EDDB item_id, so we'll just store them by the fdev_id
+    # Rare items don't have an EDDB commodity_id, so we'll just store them by the fdev_id
     for line in iter(edcd_rare_dict):
         item_ids[line['id']] = line['id']
 
