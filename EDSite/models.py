@@ -254,7 +254,6 @@ class LiveListing(models.Model):
         index_together = [
             ("commodity_id", "station_id"),
         ]
-
         ordering = ['-id']
 
     @property

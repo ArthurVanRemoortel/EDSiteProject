@@ -167,12 +167,10 @@ def commodity(request, commodity_id):
                 listings = listings.filter(Q(station__pad_size='L'))
 
             listings = listings.order_by('-demand_price' if buy_or_sell == 'sell' else 'supply_price')
-            listings = listings[:40]
-        else:
-            raise Exception()
+
     context = {
         'commodity': commodity,
-        'listings': listings,
+        'listings': listings[:40],
         'form': form
     }
     # print(cache.get(f'best_{commodity_id}'))
