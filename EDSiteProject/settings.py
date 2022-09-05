@@ -55,7 +55,7 @@ SECRET_KEY = DJANGO_SECRET_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = False
-DEBUG = True
+DEBUG = DEBUG_MODE
 
 ALLOWED_HOSTS = ['*']
 

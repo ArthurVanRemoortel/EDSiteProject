@@ -178,6 +178,9 @@ class Station(models.Model):
     def is_live(self):
         return self.data_age_days != -1 and self.data_age_days * 24 * 60 < IS_LIVE_MINUTES
 
+    # def delete(self, using=None, keep_parents=False):
+    #     super(Station, self).delete(using, keep_parents)
+
     def __str__(self):
         return f'{self.fullname}'
 
@@ -210,9 +213,9 @@ class LiveListing(models.Model):
     def is_high_supply(self, minimum=5000):
         return self.supply_units > minimum
 
-    def is_high_demand(self, minimum=0):
-        if self.station.station_type == StationType.FLEET:
-            return self.demand_units > 200
+    def is_high_demand(self, minimum=200):
+        # if self.station.station_type == StationType.FLEET:
+        #     return self.demand_units > 200
         return self.demand_units > minimum
 
     @property
@@ -231,7 +234,7 @@ class LiveListing(models.Model):
 
 class HistoricListing(models.Model):
     commodity = models.ForeignKey(Commodity, on_delete=models.CASCADE, related_name='historic_listings')
-    station = models.ForeignKey(Station, on_delete=models.CASCADE)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE, related_name='historic_listings')
     demand_price = models.IntegerField()
     demand_units = models.IntegerField()
     supply_price = models.IntegerField()

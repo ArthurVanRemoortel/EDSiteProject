@@ -34,6 +34,7 @@ TODO:
   - Integration with the official API for user data.
   - Create missions
   - Image Gallery
+  - Show price fluctuations of commodities.
 - Fixes:
   - Auto background updates
   - Testing

@@ -121,6 +121,7 @@ class LiveListener:
         del self.subscriber
 
     def start_background(self):
+        print("Starting background listener in background...")
         self.active = True
         self.listener_thread = threading.Thread(target=self.get_batch)
         self.listener_thread.start()

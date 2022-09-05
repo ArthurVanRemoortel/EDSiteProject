@@ -162,6 +162,7 @@ class EDData(metaclass=SingletonMeta):
         systems = {system.tradedangerous_id: system for system in System.objects.all()}
         stations = {station.tradedangerous_id: station for station in Station.objects.all()}
         deleted_stations_ids = []
+        deleted_historic_ids = []
         td_stations = tdb.stationByID
         for td_station_id, td_station in tqdm(td_stations.items()):
             try:
@@ -212,11 +213,17 @@ class EDData(metaclass=SingletonMeta):
         for station_tradedangerous_id, station in stations.items():
             if station_tradedangerous_id not in td_stations:
                 deleted_stations_ids.append(station.id)
+                for hist in station.historic_listings.all():
+                    deleted_historic_ids.append(hist.id)
 
         if new_stations:
             Station.objects.bulk_create(new_stations)
             print(f"Found {len(new_stations)} new stations.")
+
         if deleted_stations_ids:
+            # hist = HistoricListing.objects.filter(station_id__in=deleted_stations_ids).all()
+            print("Hist=", len(deleted_historic_ids))
+            HistoricListing.objects.filter(pk__in=deleted_historic_ids).delete()
             Station.objects.filter(pk__in=deleted_stations_ids).delete()
             print(f"Deleted {len(deleted_stations_ids)} stations.")
 
@@ -296,7 +303,7 @@ class EDData(metaclass=SingletonMeta):
         total_updated_carriers = 0
 
         visited_listings = set()
-        deleted_listings = []
+        deleted_listings_ids = []
         # station_ids_part_start = min_station_id
         for station_ids_chunk in tqdm(chunks_no_overlap(td_listings_station_ids, TD_PART_SIZE)):
             min_station_td_id, max_station_td_id = min(station_ids_chunk), max(station_ids_chunk)
@@ -372,10 +379,9 @@ class EDData(metaclass=SingletonMeta):
                     ...
 
             to_delete = []
-            for existing_listing_key, existing_listing in existing_live_listings:
+            for existing_listing_key, existing_listing in existing_live_listings.items():
                 if existing_listing_key not in visited_listings:
-                    print("Should delete: ", existing_listing_key)
-                    deleted_listings.append(existing_listing)
+                    deleted_listings_ids.append(existing_listing.id)
 
 
         print(f"New {len(new_listings)}, {len(updated_listings)}, {len(new_historic_listings)}, {ignored_historic_listings}")
@@ -409,6 +415,10 @@ class EDData(metaclass=SingletonMeta):
                     for ll in chunk:
                         # print(model_to_dict(ll))
                         LiveListing.objects.filter(id=ll.id).update(**model_to_dict(ll))  # https://www.sankalpjonna.com/learn-django/running-a-bulk-update-with-django
+        if deleted_listings_ids:
+            print(f"Deleting {len(deleted_listings_ids)} listings.")
+            for chunk in tqdm(list(chunks(deleted_listings_ids, 10000))):
+                LiveListing.objects.filter(pk__in=chunk).delete()
         db.reset_queries()
         del updated_listings
         print(f"Saving updated listings: {time.time() - t0}")
@@ -446,7 +456,7 @@ class EDData(metaclass=SingletonMeta):
         tdb = None
         if data:
             t1 = time.time()
-            self.update_tradedangerous_database()
+            # self.update_tradedangerous_database()
             print(f"Updating TradeDangerous took {time.time() - t1} seconds")
         if update_systems:
             tdb = self.tdb

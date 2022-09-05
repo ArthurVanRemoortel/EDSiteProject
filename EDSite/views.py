@@ -52,7 +52,7 @@ def systems(request):
     if request.method == 'GET':
         form = SystemsForm()
         form.fields['only_populated'].initial = 'no'
-        context['systems'] = System.objects.order_by('id')
+        filtered_systems = System.objects.order_by('id')
     else:
         form = SystemsForm(request.POST)
         search = form.data['search']
@@ -64,7 +64,7 @@ def systems(request):
             filtered_systems = System.objects.all().order_by('id')
         if only_populated:
             filtered_systems = filtered_systems.annotate(num_stations=Count('stations')).filter(num_stations__gt=0)
-        context['systems'] = filtered_systems[:40]
+    context['systems'] = filtered_systems[:40]
     context['form'] = form
     return render(request, 'EDSite/systems.html', base_context(request) | context)
 

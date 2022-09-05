@@ -30,10 +30,9 @@ urlpatterns = [
     path("profile", views.profile_view, name="profile"),
     path("logout", views.logout_view, name="logout"),
 
-    path("planners/trade-routes", views.trade_routes, name="trade-routes"),
-    path("planners/carrier-planner", views.carrier_planner, name="carrier-planner"),
-    path("planners/carrier-missions", views.carrier_missions, name="carrier-missions"),
-    path("planners/carrier-missions/<str:tab>", views.carrier_missions, name="carrier-missions"),
+    path("trade/trade-routes", views.trade_routes, name="trade-routes"),
+    path("trade/carrier-missions", views.carrier_missions, name="carrier-missions"),
+    path("trade/carrier-missions/<str:tab>", views.carrier_missions, name="carrier-missions"),
 
     # path('api/commodities', views_api.api_commodities, name="api_commodities")
 ]
