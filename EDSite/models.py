@@ -251,9 +251,9 @@ class LiveListing(models.Model):
     from_live = models.BooleanField()
 
     class Meta:
-        index_together = [
-            ("commodity_id", "station_id"),
-        ]
+        # index_together = [
+        #     ("commodity_id", "station_id"),
+        # ]
         ordering = ['-id']
 
     @property

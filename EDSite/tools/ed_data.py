@@ -321,9 +321,9 @@ class EDData(metaclass=SingletonMeta):
 
             if full_update:
                 # TODO: Maybe parse from csv file instead.
-                td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, commodity_id', [min_station_td_id, max_station_td_id]))
+                td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
             else:
-                td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, commodity_id', [min_station_td_id, max_station_td_id]))
+                td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
 
 
             existing_live_listings = {(ll.station_id, ll.commodity_id): ll for ll in LiveListing.objects.filter(Q(station_tradedangerous_id__gte=min_station_td_id) & Q(station_tradedangerous_id__lte=max_station_td_id)).all()}  # Problem
@@ -467,7 +467,7 @@ class EDData(metaclass=SingletonMeta):
         tdb = None
         if data:
             t1 = time.time()
-            # self.update_tradedangerous_database()
+            self.update_tradedangerous_database()
             print(f"Updating TradeDangerous took {time.time() - t1} seconds")
         if update_systems:
             tdb = self.tdb

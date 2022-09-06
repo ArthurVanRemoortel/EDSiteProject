@@ -1,5 +1,6 @@
 import datetime
 import threading
+import time
 from pprint import pprint
 
 from django.contrib import messages
@@ -134,13 +135,14 @@ def commodities(request):
 
 def commodity(request, commodity_id):
     commodity = Commodity.objects.get(pk=commodity_id)
-    # pprint(EDData().test(commodity_id=commodity.id))
     listings: [LiveListing] = []
+    t0 = time.time()
+
     if request.method == 'GET':
         form = CommodityForm()
         form.fields['buy_or_sell'].initial = 'sell'
         form.fields['landing_pad_size'].initial = 'S'
-        listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(demand_units__gt=0)).order_by('-demand_price')[:30]
+        listings = LiveListing.objects.filter(commodity_id=commodity_id).order_by('-demand_price')
     else:  # POST
         form = CommodityForm(request.POST)
         if form.is_valid():
@@ -165,15 +167,13 @@ def commodity(request, commodity_id):
                 listings = listings.exclude(Q(station__pad_size='S'))
             elif landing_pad_size == "L":
                 listings = listings.filter(Q(station__pad_size='L'))
-
             listings = listings.order_by('-demand_price' if buy_or_sell == 'sell' else 'supply_price')
 
     context = {
         'commodity': commodity,
-        'listings': listings[:40],
+        'listings': list(listings[:40]),
         'form': form
     }
-    # print(cache.get(f'best_{commodity_id}'))
     return render(request, 'EDSite/commodity.html', base_context(request) | context)
 
 

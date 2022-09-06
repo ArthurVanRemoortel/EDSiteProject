@@ -148,7 +148,7 @@ class LiveListener:
 
     def process_messages(self):
         to_update_listings = []
-        to_update_stations = []
+        to_update_stations = set()
         new_stations = []
         new_listings: {Station, [LiveListing]} = {}
         new_historic_listings = []
@@ -171,7 +171,7 @@ class LiveListener:
                 with transaction.atomic():
                     for station in to_update_stations:
                         Station.objects.filter(id=station.id).update(system_id=station.system_id)
-                to_update_stations = []
+                to_update_stations = set()
             try:
                 entry = self.data_queue.popleft()
             except IndexError:
@@ -204,7 +204,7 @@ class LiveListener:
                         system = self.ed_data.system_names.get(system_name)
                         if system:
                             station.system_id = system.id
-                            to_update_stations.append(station),# tOFO
+                            to_update_stations.add(station),# tOFO
                             print(f'Changed the station {station} to system {system}')
                         else:
                             pass
