@@ -5,15 +5,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-{#    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.1.1/css/all.css">#}
+    {#    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.1.1/css/all.css">#}
     <script src="https://kit.fontawesome.com/4399cb7c1e.js" crossorigin="anonymous"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.js"> </script>
 
-    <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/themes/ui-lightness/jquery-ui.css" rel="stylesheet" type="text/css" />
     {% load static %}
+
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.full.js"></script>
+
+
     <link href="{% sass_src 'EDSite/bulma.sass' %}" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="{% static 'EDSite/style.css' %}">
+    <script src="{% static 'EDSite/script.js' %}"></script>
     <title>{% block title %}{% endblock title %}</title>
 </head>
 
@@ -77,31 +82,31 @@
         <div class="navbar-end">
             {% if DEBUG_MODE %}
                 <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    Debug
-                </a>
-
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" id="reloadDataButton">
-                        Reload Data
+                    <a class="navbar-link">
+                        Debug
                     </a>
 
-                    <a class="navbar-item" id="updateLocalButton">
-                        Update Local (All)
-                    </a>
-                    <a class="navbar-item" id="updateLocalNoStationsButton">
-                        Update Local (Quick)
-                    </a>
+                    <div class="navbar-dropdown">
+                        <a class="navbar-item" id="reloadDataButton">
+                            Reload Data
+                        </a>
 
-                    <a class="navbar-item" id="updateLocalListingsButton">
-                        Update Local (Listings)
-                    </a>
-                    <a class="navbar-item" id="updateLocalCacheButton">
-                        Update Cache
-                    </a>
+                        <a class="navbar-item" id="updateLocalButton">
+                            Update Local (All)
+                        </a>
+                        <a class="navbar-item" id="updateLocalNoStationsButton">
+                            Update Local (Quick)
+                        </a>
 
+                        <a class="navbar-item" id="updateLocalListingsButton">
+                            Update Local (Listings)
+                        </a>
+                        <a class="navbar-item" id="updateLocalCacheButton">
+                            Update Cache
+                        </a>
+
+                    </div>
                 </div>
-            </div>
             {% endif %}
             <div class="navbar-item">
                 <div class="buttons">
@@ -128,19 +133,19 @@
 
 <div class="page-wrapper">
     <div class="container" style="width:100%">
-            {% block content %}
-            {% endblock %}
+        {% block content %}
+        {% endblock %}
     </div>
 
     <footer class="footer column is-narrow box mt-6">
-      <div class="content has-text-centered">
-        <p>
-            <strong> <a href="https://www.elitedangerous.com/">Elite: Dangerous</a></strong> game tools by <strong><a href="https://github.com/ArthurVanRemoortel">Arthur Van Remoortel <i class="fa-brands fa-github"></i></a></strong>
-            <span>
+        <div class="content has-text-centered">
+            <p>
+                <strong> <a href="https://www.elitedangerous.com/">Elite: Dangerous</a></strong> game tools by <strong><a href="https://github.com/ArthurVanRemoortel">Arthur Van Remoortel <i class="fa-brands fa-github"></i></a></strong>
+                <span>
                 The source-code is available on <a href="https://github.com/ArthurVanRemoortel/EDSiteProject"> GitHub <i class="fa-brands fa-github"></i></a>
             </span>
-        </p>
-      </div>
+            </p>
+        </div>
     </footer>
 </div>
 

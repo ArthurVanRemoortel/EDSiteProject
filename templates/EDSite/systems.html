@@ -68,8 +68,6 @@
                                 </div>
                             </td>
                         </tr>
-
-
                         <tr>
                             <td>
                                 <div class="field">
@@ -85,7 +83,6 @@
 
             </form>
         </article>
-
         <article class="panel is-info mb-6 mt-6">
             <p class="panel-heading">Results</p>
 
@@ -116,7 +113,54 @@
                 </table>
             </div>
         </article>
-
     </div>
 {% endblock %}
+
+
+{% block javascript %}
+    <script>
+        $(document).ready(function () {
+            const $searchInput = $('#searchInput');
+            const $referenceInput = $('#referenceInput');
+
+            function formatSystemSelection (system) {
+                return $referenceInput.text()
+            }
+
+            function formatSystem (state) {
+                if (state.loading) return "Looking up users...";
+                return state.name;
+            }
+
+            function onSearchSelect (e) {
+                const selectedId = e.params.data.id;
+                window.location.href = "{% url 'system' system_id=0 %}".replace('0', selectedId);
+            }
+
+            function onReferenceSelect (e) {
+            }
+
+            makeSelect2(
+                $searchInput,
+                "{% url "api-systems-list" %}",
+                formatSystem,
+                formatSystemSelection
+            )
+            $searchInput.on("select2:select", onSearchSelect);
+
+            makeSelect2(
+                $referenceInput,
+                "{% url "api-systems-list" %}",
+                formatSystem,
+                formatSystemSelection
+            )
+            $referenceInput.on("select2:select", onReferenceSelect);
+        });
+
+
+    </script>
+
+
+{% endblock javascript %}
+
 </html>

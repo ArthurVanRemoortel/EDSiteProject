@@ -5,12 +5,16 @@ from rest_framework import routers
 from . import views
 from . import views_api
 
+API_PREFIX = "api/"
+
 router = routers.DefaultRouter()
 router.register('commodities', views_api.CommoditiesViewSet, basename="api-commodities")
 router.register('listings', views_api.ListingsViewSet, basename="api-listings")
+router.register('systems', views_api.SystemsViewSet, basename="api-systems")
+router.register('stations', views_api.StationsViewSet, basename="api-stations")
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path(API_PREFIX, include(router.urls)),
 
     path('', views.index, name='index'),
     path('systems', views.systems, name='systems'),
@@ -33,8 +37,6 @@ urlpatterns = [
     path("trade/trade-routes", views.trade_routes, name="trade-routes"),
     path("trade/carrier-missions", views.carrier_missions, name="carrier-missions"),
     path("trade/carrier-missions/<str:tab>", views.carrier_missions, name="carrier-missions"),
-
-    # path('api/commodities', views_api.api_commodities, name="api_commodities")
 ]
 
 urlpatterns += staticfiles_urlpatterns()

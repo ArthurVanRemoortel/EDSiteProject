@@ -204,12 +204,13 @@ class LiveListener:
                         system = self.ed_data.system_names.get(system_name)
                         if system:
                             station.system_id = system.id
-                            to_update_stations.add(station),# tOFO
+                            to_update_stations.add(station)
                             print(f'Changed the station {station} to system {system}')
+                            break
                         else:
                             pass
                             # TODO: New systems not in db yet.
-                        break
+
             if station:
                 # station_listings = {listing.commodity_id: listing for listing in LiveListing.objects.filter(station_tradedangerous_id=station.tradedangerous_id)}
                 new_listings[station] = []

@@ -63,13 +63,13 @@ class CommodityForm(forms.Form):
 class SystemsForm(forms.Form):
     search = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'id': 'searchInput'}
         ),
         required=False,
     )
     reference_system = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'id': 'referenceInput'}
         ),
         required=False,
     )

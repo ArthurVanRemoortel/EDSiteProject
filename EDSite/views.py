@@ -54,10 +54,17 @@ def systems(request):
         form = SystemsForm()
         form.fields['only_populated'].initial = 'no'
         filtered_systems = System.objects.order_by('id')
+        mission_distances = {}
     else:
         form = SystemsForm(request.POST)
         search = form.data['search']
-        ref_system_name = form.data['reference_system']
+        ref_system_name_or_id = form.data['reference_system']
+        ref_system = None
+        if ref_system_name_or_id and ref_system_name_or_id.isdigit():
+            ref_system = System.objects.get(pk=int(ref_system_name_or_id))
+        elif ref_system_name_or_id:
+            ref_system = System.objects.filter(name__icontains=ref_system_name_or_id).order_by('id').first()
+
         only_populated = form.data['only_populated'] == 'yes'
         if search:
             filtered_systems = System.objects.filter(name__icontains=search).order_by('id')
@@ -65,6 +72,8 @@ def systems(request):
             filtered_systems = System.objects.all().order_by('id')
         if only_populated:
             filtered_systems = filtered_systems.annotate(num_stations=Count('stations')).filter(num_stations__gt=0)
+
+    # context['reference_distances'] = {mission.id: int(mission.station.system.distance_to(CURRENT_SYSTEM)) for mission in missions}
     context['systems'] = filtered_systems[:40]
     context['form'] = form
     return render(request, 'EDSite/systems.html', base_context(request) | context)
