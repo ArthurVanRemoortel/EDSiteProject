@@ -444,11 +444,13 @@ class EDData(metaclass=SingletonMeta):
             if live_listing.is_recently_modified:
                 if live_listing.is_high_supply() and 0 < live_listing.supply_price and live_listing.is_recently_modified:
                     if not best_sells[live_listing.commodity_id] or best_sells[live_listing.commodity_id].supply_price > live_listing.supply_price:
-                        best_sells[live_listing.commodity_id] = live_listing
+                        if not live_listing.station.station_type == StationType.FLEET:
+                            best_sells[live_listing.commodity_id] = live_listing
 
                 if live_listing.is_high_demand() and live_listing.demand_units > 0 and 0 < live_listing.demand_price:
                     if not best_buys[live_listing.commodity_id] or live_listing.demand_price > best_buys[live_listing.commodity_id].demand_price:
-                        best_buys[live_listing.commodity_id] = live_listing
+                        if not live_listing.station.station_type == StationType.FLEET:
+                            best_buys[live_listing.commodity_id] = live_listing
 
         for commodity in commodities:
             if best_buys[commodity.id] and (best_buys[commodity.id].demand_units == 0):

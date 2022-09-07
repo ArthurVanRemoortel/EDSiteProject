@@ -13,7 +13,7 @@ class CommoditySerializer(serializers.HyperlinkedModelSerializer):
 class SystemSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = System
-        fields = ['name', 'pos_x', 'pos_y', 'pos_z', 'tradedangerous_id']
+        fields = ['id', 'name', 'pos_x', 'pos_y', 'pos_z', 'tradedangerous_id']
 
 
 class StationSerializer(serializers.HyperlinkedModelSerializer):
@@ -21,7 +21,7 @@ class StationSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Station
-        fields = ['name', 'ls_from_star', 'pad_size', 'item_count', 'data_age_days', 'market',
+        fields = ['id', 'name', 'ls_from_star', 'pad_size', 'item_count', 'modified', 'market',
                   'black_market', 'shipyard', 'outfitting', 'rearm', 'refuel', 'repair', 'planetary',
                   'fleet', 'odyssey', 'system', 'tradedangerous_id'
                   ]

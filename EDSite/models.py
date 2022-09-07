@@ -99,6 +99,7 @@ class System(models.Model):
         index_together = [
             ("pos_x", "pos_y", "pos_z"),
         ]
+        ordering = ['-id']
 
     def distance_to(self, other: 'System'):
         dX = (self.pos_x - other.pos_x)
@@ -138,6 +139,8 @@ class Station(models.Model):
     system = models.ForeignKey(System, on_delete=models.CASCADE, related_name='stations')
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
 
+    class Meta:
+        ordering = ['-id']
 
     @property
     def station_type(self):

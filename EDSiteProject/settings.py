@@ -72,8 +72,7 @@ INSTALLED_APPS = [
     'EDSite.apps.EdsiteConfig',
     'sass_processor',
     'compressor',
-    'rest_framework',
-]
+    'rest_framework',]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
