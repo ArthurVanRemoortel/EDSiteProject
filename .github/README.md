@@ -35,6 +35,7 @@ TODO:
   - Create missions
   - Image Gallery
   - Show price fluctuations of commodities.
+  - Remember user location.
 - Fixes:
   - Auto background updates
   - Testing

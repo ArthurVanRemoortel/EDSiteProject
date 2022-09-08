@@ -1,6 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
 {% extends 'EDSite/base.html'%}
+{% load extras %}
 {% block title %}
     Stations
 {% endblock %}
@@ -153,7 +152,11 @@
                             <th> <a href="/systems/{{ station.system.id }}">{{ station.system.name }}</a> </th>
                             <th> {{ station.pad_size }} </th>
                             <th> {{ station.ls_from_star }} <span class="unit">Ls</span> </th>
-                            <th> ? </th>
+                            {% if reference_distances %}
+                                <th> {{ reference_distances|get_value:station.id }} <span class="unit">Ly</span></th>
+                            {% else %}
+                                <th> ? </th>
+                            {% endif %}
                             <th> {{ station.modified_string }} </th>
                         </tr>
                     {% endfor %}
@@ -164,4 +167,48 @@
 
     </div>
 {% endblock %}
-</html>
+
+{% block javascript %}
+    <script>
+        $(document).ready(function () {
+            const $stationSearchInput = $('#stationSearchInput');
+            const $referenceInput = $('#referenceInput');
+
+            function formatStationSelection (station) {
+                return $referenceInput.text()
+            }
+
+            function formatStation (state) {
+                if (state.loading) return "Looking up stations...";
+                return state.name;
+            }
+
+            function onSearchSelect (e) {
+                const selectedId = e.params.data.id;
+                window.location.href = "{% url 'station' station_id=0 %}".replace('0', selectedId);
+            }
+
+            function onReferenceSelect (e) {
+            }
+
+            makeSelect2(
+                $stationSearchInput,
+                "{% url "api-stations-list" %}",
+                formatStation,
+                formatStationSelection,
+                "Station Name"
+            )
+            $stationSearchInput.on("select2:select", onSearchSelect);
+
+            makeSelect2(
+                $referenceInput,
+                "{% url "api-systems-list" %}",
+                formatStation,
+                formatStationSelection,
+                "Station Name"
+            )
+            $referenceInput.on("select2:select", onReferenceSelect);
+        });
+
+    </script>
+{% endblock javascript %}

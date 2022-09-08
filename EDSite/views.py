@@ -58,18 +58,20 @@ def systems(request):
     else:
         form = SystemsForm(request.POST)
         search = form.data['search']
-        pprint(form.data)
         ref_system_name_or_id = form.data['reference_system']
+        only_populated = form.data['only_populated'] == 'yes'
+
         if ref_system_name_or_id and ref_system_name_or_id.isdigit():
             ref_system = System.objects.get(pk=int(ref_system_name_or_id))
         elif ref_system_name_or_id:
-            ref_system = System.objects.filter(name__icontains=ref_system_name_or_id).order_by('id').first()
+            ref_system = System.objects.filter(name__icontains=ref_system_name_or_id).first()
 
-        only_populated = form.data['only_populated'] == 'yes'
+        filtered_systems = System.objects.order_by('id')
         if search:
-            filtered_systems = System.objects.filter(name__icontains=search).order_by('id')
+            filtered_systems = System.objects.filter(name__icontains=search)
         else:
-            filtered_systems = System.objects.all().order_by('id')
+            filtered_systems = System.objects.order_by('id')
+
         if only_populated:
             filtered_systems = filtered_systems.annotate(num_stations=Count('stations')).filter(num_stations__gt=0)
 
@@ -93,9 +95,11 @@ def system(request, system_id):
 
 def stations(request):
     context = {}
+    ref_system = None
+    system_distance = None
     if request.method == 'GET':
         form = StationsForm()
-        context['stations'] = Station.objects.order_by('id')[:40]
+        filtered_stations = Station.objects.order_by('id')
     else:
         form = StationsForm(request.POST)
         search = form.data['search']
@@ -105,11 +109,26 @@ def stations(request):
         landing_pad_size = form.data['landing_pad_size']
         star_distance = form.data['star_distance']
         system_distance = form.data['system_distance']
+        ref_system_name_or_id = form.data['reference_system']
 
-        if search:
-            filtered_stations = Station.objects.filter(name__icontains=search).order_by('id')
+        if system_distance and system_distance.isdigit():
+            system_distance = int(system_distance)
+
+        if ref_system_name_or_id and ref_system_name_or_id.isdigit():
+            ref_system = System.objects.get(pk=int(ref_system_name_or_id))
+            filtered_stations = Station.objects.select_related('system').order_by('id')
+        elif ref_system_name_or_id:
+            ref_system = System.objects.filter(name__icontains=ref_system_name_or_id).order_by('id').first()
+            if ref_system:
+                filtered_stations = Station.objects.select_related('system').order_by('id')
+            else:
+                filtered_stations = Station.objects.order_by('id')
         else:
-            filtered_stations = Station.objects.order_by('id').all()
+            filtered_stations = Station.objects.order_by('id')
+
+        if star_distance and star_distance.isdigit():
+            filtered_stations = filtered_stations.filter(Q(ls_from_star__lte=int(star_distance)))
+
         if not include_planetary:
             filtered_stations = filtered_stations.filter(Q(planetary=0))
         if not include_fleet_carriers:
@@ -119,9 +138,17 @@ def stations(request):
         elif landing_pad_size == "L":
             filtered_stations = filtered_stations.filter(Q(station__pad_size='L'))
 
-        # TODO: Add star_distance and system_distance filter.
 
-        context['stations'] = filtered_stations[:40]
+    filtered_stations = filtered_stations[:40]
+    if ref_system:
+        filtered_stations = filtered_stations.select_related('system')
+        distances = {other_station.id: int(other_station.system.distance_to(ref_system)) for other_station in filtered_stations}
+        filtered_stations = sorted(list(filtered_stations), key=lambda filtered_station: distances[filtered_station.id], reverse=False)
+        if system_distance:
+            filtered_stations = filter(lambda filtered_station: distances[filtered_station.id] <= int(system_distance), list(filtered_stations))
+        context['reference_distances'] = distances
+
+    context['stations'] = filtered_stations
     context['form'] = form
     return render(request, 'EDSite/stations.html', base_context(request) | context)
 

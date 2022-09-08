@@ -87,13 +87,13 @@ class SystemsForm(forms.Form):
 class StationsForm(forms.Form):
     search = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'id': 'stationSearchInput'}
         ),
         required=False,
     )
     reference_system = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'id': 'referenceInput'}
         ),
         required=False,
     )

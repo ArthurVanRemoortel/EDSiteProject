@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
 {% extends 'EDSite/base.html'%}
 {% block title %}
     Station - {{ station.name }}
@@ -106,13 +104,11 @@
                                     {% endif %}
                                 </tr>
                             {% endif %}
-
                         {% endfor %}
                     {% endfor %}
                     </tbody>
                 </table>
             </div>
         </article>
-
     </div>
-{% endblock %}
+{% endblock content %}
