@@ -226,7 +226,7 @@ def commodity(request, commodity_id):
     if ref_system:
         filtered_listings = filtered_listings.select_related('station__system')
         distances = {listing.id: int(listing.station.system.distance_to(ref_system)) for listing in filtered_listings}
-        filtered_listings = sorted(list(filtered_listings), key=lambda filtered_system: distances[filtered_system.id], reverse=False)
+        # filtered_listings = sorted(list(filtered_listings), key=lambda filtered_system: distances[filtered_system.id], reverse=False)
         context['reference_distances'] = distances
     else:
         filtered_listings = filtered_listings.select_related('station__system')
