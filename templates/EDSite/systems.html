@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 {% extends 'EDSite/base.html'%}
+{% load extras %}
 {% block title %}
     Commodities
 {% endblock %}
@@ -105,7 +106,11 @@
                             </th>
                             <th> {{ system.stations.count }} </th>
                             <th> ? </th>
-                            <th> ? </th>
+                            {% if reference_distances %}
+                                <th> {{ reference_distances|get_value:system.id }} <span class="unit">Ly</span></th>
+                            {% else %}
+                                <th> ? </th>
+                            {% endif %}
                             <th> {{ system.distance_to_sol|floatformat:0 }} <span class="unit">Ly</span> </th>
                         </tr>
                     {% endfor %}
@@ -128,7 +133,7 @@
             }
 
             function formatSystem (state) {
-                if (state.loading) return "Looking up users...";
+                if (state.loading) return "Looking up systems...";
                 return state.name;
             }
 
@@ -144,7 +149,8 @@
                 $searchInput,
                 "{% url "api-systems-list" %}",
                 formatSystem,
-                formatSystemSelection
+                formatSystemSelection,
+                "System Name"
             )
             $searchInput.on("select2:select", onSearchSelect);
 
@@ -152,7 +158,8 @@
                 $referenceInput,
                 "{% url "api-systems-list" %}",
                 formatSystem,
-                formatSystemSelection
+                formatSystemSelection,
+                "System Name"
             )
             $referenceInput.on("select2:select", onReferenceSelect);
         });

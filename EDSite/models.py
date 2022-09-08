@@ -108,7 +108,7 @@ class System(models.Model):
         return ((dX ** 2) + (dY ** 2) + (dZ ** 2)) ** 0.5
 
     def distance_to_sol(self):
-        # TODO: Save this in DB so it doesn't need to be recalculated every time.
+        # TODO: Save this in DB or a cache so it doesn't need to be recalculated every time.
         dX = self.pos_x
         dY = self.pos_y
         dZ = self.pos_z

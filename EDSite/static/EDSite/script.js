@@ -1,5 +1,5 @@
 
-function makeSelect2($inputRef, queryUrl, formatFunction, formatSelectionFunction) {
+function makeSelect2($inputRef, queryUrl, formatFunction, formatSelectionFunction, placeholder) {
     $inputRef.select2({
         ajax: {
             delay: 500,
@@ -30,7 +30,7 @@ function makeSelect2($inputRef, queryUrl, formatFunction, formatSelectionFunctio
         minimumInputLength: 3,
         templateResult: formatFunction,
         templateSelection: formatSelectionFunction,
-        placeholder: 'System Name',
+        placeholder: placeholder,
     });
 }
 
