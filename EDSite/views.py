@@ -8,7 +8,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AnonymousUser
 from django.core.cache import cache
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Prefetch
 from django.forms import model_to_dict
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect
@@ -67,10 +67,6 @@ def systems(request):
             ref_system = System.objects.filter(name__icontains=ref_system_name_or_id).first()
 
         filtered_systems = System.objects.order_by('id')
-        if search:
-            filtered_systems = System.objects.filter(name__icontains=search)
-        else:
-            filtered_systems = System.objects.order_by('id')
 
         if only_populated:
             filtered_systems = filtered_systems.annotate(num_stations=Count('stations')).filter(num_stations__gt=0)
@@ -103,14 +99,13 @@ def stations(request):
     else:
         form = StationsForm(request.POST)
         search = form.data['search']
-        ref_system_name = form.data['reference_system']
         include_fleet_carriers = form.data['include_fleet_carriers'] == 'yes'
         include_planetary = form.data['include_planetary'] == 'yes'
         landing_pad_size = form.data['landing_pad_size']
         star_distance = form.data['star_distance']
         system_distance = form.data['system_distance']
-        ref_system_name_or_id = form.data['reference_system']
 
+        ref_system_name_or_id = form.data['reference_system']
         if system_distance and system_distance.isdigit():
             system_distance = int(system_distance)
 
@@ -176,45 +171,71 @@ def commodities(request):
 
 def commodity(request, commodity_id):
     commodity = Commodity.objects.get(pk=commodity_id)
-    listings: [LiveListing] = []
+    filtered_listings: [LiveListing] = []
     t0 = time.time()
-
+    context = {}
+    ref_system = None
+    ordering = '-demand_price'
     if request.method == 'GET':
         form = CommodityForm()
         form.fields['buy_or_sell'].initial = 'sell'
         form.fields['landing_pad_size'].initial = 'S'
-        listings = LiveListing.objects.filter(commodity_id=commodity_id).order_by('-demand_price')
+        filtered_listings = LiveListing.objects.filter(commodity_id=commodity_id)
     else:  # POST
         form = CommodityForm(request.POST)
         if form.is_valid():
-            ref_system_name = form.data['reference_system']
             include_odyssey = form.data['include_odyssey'] == 'yes'
             include_fleet_carriers = form.data['include_fleet_carriers'] == 'yes'
             include_planetary = form.data['include_planetary'] == 'yes'
             landing_pad_size = form.data['landing_pad_size']
             minimum_units = form.data['minimum_units'] if form.data['minimum_units'] else 0
             buy_or_sell = form.data['buy_or_sell']
-            if buy_or_sell == 'sell':
-                listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(demand_units__gt=minimum_units))
-            else:
-                listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(supply_units__gt=minimum_units))
-            if not include_planetary:
-                listings = listings.filter(Q(station__planetary=0))
-            if not include_fleet_carriers:
-                listings = listings.filter(Q(station__fleet=0))
-            if not include_odyssey:
-                listings = listings.filter(Q(station__odyssey=0))
-            if landing_pad_size == "M":
-                listings = listings.exclude(Q(station__pad_size='S'))
-            elif landing_pad_size == "L":
-                listings = listings.filter(Q(station__pad_size='L'))
-            listings = listings.order_by('-demand_price' if buy_or_sell == 'sell' else 'supply_price')
 
-    context = {
-        'commodity': commodity,
-        'listings': list(listings[:40]),
-        'form': form
-    }
+            ref_system_name_or_id = form.data['reference_system']
+
+            if ref_system_name_or_id and ref_system_name_or_id.isdigit():
+                ref_system = System.objects.get(pk=int(ref_system_name_or_id))
+                filtered_listings = LiveListing.objects
+            elif ref_system_name_or_id:
+                ref_system = System.objects.filter(name__icontains=ref_system_name_or_id).first()
+                if ref_system:
+                    filtered_listings = LiveListing.objects
+                else:
+                    filtered_listings = LiveListing.objects
+            else:
+                filtered_listings = LiveListing.objects
+
+            if buy_or_sell == 'sell':
+                filtered_listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(demand_units__gt=minimum_units))
+            else:
+                filtered_listings = LiveListing.objects.filter(commodity_id=commodity_id).filter(Q(supply_units__gt=minimum_units))
+            if not include_planetary:
+                filtered_listings = filtered_listings.filter(Q(station__planetary=0))
+            if not include_fleet_carriers:
+                filtered_listings = filtered_listings.filter(Q(station__fleet=0))
+            if not include_odyssey:
+                filtered_listings = filtered_listings.filter(Q(station__odyssey=0))
+            if landing_pad_size == "M":
+                filtered_listings = filtered_listings.exclude(Q(station__pad_size='S'))
+            elif landing_pad_size == "L":
+                filtered_listings = filtered_listings.filter(Q(station__pad_size='L'))
+            ordering = '-demand_price' if buy_or_sell == 'sell' else 'supply_price'
+
+    filtered_listings = filtered_listings.order_by(ordering)  # TODO: Performance. This makes it slow.
+    filtered_listings = filtered_listings[:40]
+    if ref_system:
+        filtered_listings = filtered_listings.select_related('station__system')
+        distances = {listing.id: int(listing.station.system.distance_to(ref_system)) for listing in filtered_listings}
+        filtered_listings = sorted(list(filtered_listings), key=lambda filtered_system: distances[filtered_system.id], reverse=False)
+        context['reference_distances'] = distances
+    else:
+        filtered_listings = filtered_listings.select_related('station__system')
+
+    context['commodity'] = commodity
+    context['listings'] = list(filtered_listings)
+    context['form'] = form
+
+    print("time =", time.time() - t0)
     return render(request, 'EDSite/commodity.html', base_context(request) | context)
 
 

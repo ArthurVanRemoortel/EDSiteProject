@@ -41,4 +41,4 @@ class ListingsSerializer(serializers.HyperlinkedModelSerializer):
                   'demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']
 
         read_only_fields = []
-        search_fields = ['commodity__name', 'station__name']
+        search_fields = ['id']

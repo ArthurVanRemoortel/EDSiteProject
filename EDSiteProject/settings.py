@@ -189,37 +189,24 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 
 CSRF_TRUSTED_ORIGINS = ['https://my-elite-site.herokuapp.com']
 
-# LOGGING = {
+# LOGGING = { // Database logging
 #     'version': 1,
-#     'handlers': {
-#         'console':{
-#             'level':'DEBUG',
-#             'class':'logging.StreamHandler',
-#         },
-#     },
-#     'loggers': {
-#         'django.request': {
-#             'handlers':['console'],
-#             'propagate': True,
-#             'level':'DEBUG',
+#     'filters': {
+#         'require_debug_true': {
+#             '()': 'django.utils.log.RequireDebugTrue',
 #         }
 #     },
-# }
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
 #     'handlers': {
-#         'file': {
+#         'console': {
 #             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': 'sql.log',
-#         },
+#             'filters': ['require_debug_true'],
+#             'class': 'logging.StreamHandler',
+#         }
 #     },
 #     'loggers': {
 #         'django.db.backends': {
-#             'handlers': ['file'],
 #             'level': 'DEBUG',
-#             'propagate': True,
-#         },
-#     },
+#             'handlers': ['console'],
+#         }
+#     }
 # }

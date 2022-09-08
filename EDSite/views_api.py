@@ -23,7 +23,7 @@ class ListingsViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return LiveListing.objects.all().prefetch_related('commodity', 'station')
+        return LiveListing.objects.all()#.prefetch_related('commodity', 'station')
 
 
 class SystemsViewSet(viewsets.ModelViewSet):

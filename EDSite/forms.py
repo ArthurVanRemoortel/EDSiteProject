@@ -20,7 +20,7 @@ LANDING_PAD_CHOICES = [
 class CommodityForm(forms.Form):
     reference_system = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'}
+            attrs={'class': 'input', 'id': 'referenceInput'}
         ),
         required=False,
     )
