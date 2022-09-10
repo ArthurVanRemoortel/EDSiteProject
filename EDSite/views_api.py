@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from django.db.models import Q
 from django.http import HttpResponse
 from rest_framework import viewsets, permissions, generics
@@ -23,7 +25,33 @@ class ListingsViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        return LiveListing.objects.all()#.prefetch_related('commodity', 'station')
+        qs = LiveListing.objects
+        commodity_id = self.request.query_params.get('commodity')
+        station_id = self.request.query_params.get('station')
+        system_id = self.request.query_params.get('system__station')
+        # sort = self.request.query_params.get('sort')
+        type = self.request.query_params.get('type')  # Supply or demand.
+        units = self.request.query_params.get('units')  # Supply or demand.
+        if station_id:
+            qs = qs.filter(Q(station_id=station_id))
+        if commodity_id:
+            qs = qs.filter(Q(commodity_id=commodity_id))
+        if system_id:
+            qs = qs.filter(Q(station__system=system_id))
+        if type:
+            if type == "supply":
+                if units:
+                    qs = qs.filter(Q(supply_units__gte=units))
+                else:
+                    qs = qs.filter(Q(supply_units__gt=0))
+                qs = qs.order_by('supply_price')
+            elif type == "demand":
+                if units:
+                    qs = qs.filter(Q(demand_units__gte=units))
+                else:
+                    qs = qs.filter(Q(demand_units__gt=0))
+                qs = qs.order_by('-demand_price')
+        return qs.all()  # .prefetch_related('commodity', 'station')
 
 
 class SystemsViewSet(viewsets.ModelViewSet):

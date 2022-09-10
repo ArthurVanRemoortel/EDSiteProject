@@ -302,7 +302,7 @@ pre {
   font-family: monospace; }
 
 body {
-  color: #EEEEEE;
+  color: #4a4a4a;
   font-size: 1em;
   font-weight: 400;
   line-height: 1.5; }
@@ -355,7 +355,7 @@ fieldset {
 pre {
   -webkit-overflow-scrolling: touch;
   background-color: whitesmoke;
-  color: #EEEEEE;
+  color: #4a4a4a;
   font-size: 0.875em;
   overflow-x: auto;
   padding: 1.25rem 1.5rem;
@@ -388,7 +388,7 @@ table th {
   background-color: white;
   border-radius: 6px;
   box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02);
-  color: #EEEEEE;
+  color: #4a4a4a;
   display: block;
   padding: 1.25rem; }
 
@@ -439,7 +439,7 @@ a.box:active {
   .button.is-text {
     background-color: transparent;
     border-color: transparent;
-    color: #EEEEEE;
+    color: #4a4a4a;
     text-decoration: underline; }
     .button.is-text:hover, .button.is-text.is-hovered, .button.is-text:focus, .button.is-text.is-focused {
       background-color: whitesmoke;
@@ -1648,11 +1648,11 @@ div.icon-text {
   .progress::-webkit-progress-bar {
     background-color: #FF7844; }
   .progress::-webkit-progress-value {
-    background-color: #EEEEEE; }
+    background-color: #4a4a4a; }
   .progress::-moz-progress-bar {
-    background-color: #EEEEEE; }
+    background-color: #4a4a4a; }
   .progress::-ms-fill {
-    background-color: #EEEEEE;
+    background-color: #4a4a4a;
     border: none; }
   .progress.is-white::-webkit-progress-value {
     background-color: white; }
@@ -1740,7 +1740,7 @@ div.icon-text {
     animation-name: moveIndeterminate;
     animation-timing-function: linear;
     background-color: #FF7844;
-    background-image: linear-gradient(to right, #EEEEEE 30%, #FF7844 30%);
+    background-image: linear-gradient(to right, #4a4a4a 30%, #FF7844 30%);
     background-position: top left;
     background-repeat: no-repeat;
     background-size: 150% 150%; }
@@ -1937,7 +1937,7 @@ div.icon-text {
   align-items: center;
   background-color: whitesmoke;
   border-radius: 4px;
-  color: #EEEEEE;
+  color: #4a4a4a;
   display: inline-flex;
   font-size: 0.75rem;
   height: 2em;
@@ -2673,7 +2673,7 @@ a.tag:hover {
 
 .file-cta {
   background-color: whitesmoke;
-  color: #EEEEEE; }
+  color: #4a4a4a; }
 
 .file-name {
   border-color: #393E46;
@@ -3002,7 +3002,7 @@ a.tag:hover {
   background-color: white;
   border-radius: 0.25rem;
   box-shadow: 0 0.5em 1em -0.125em rgba(10, 10, 10, 0.1), 0 0px 0 1px rgba(10, 10, 10, 0.02);
-  color: #EEEEEE;
+  color: #4a4a4a;
   max-width: 100%;
   position: relative; }
 
@@ -3113,7 +3113,7 @@ a.tag:hover {
   padding-top: 0.5rem; }
 
 .dropdown-item {
-  color: #EEEEEE;
+  color: #4a4a4a;
   display: block;
   font-size: 0.875rem;
   line-height: 1.5;
@@ -3267,7 +3267,7 @@ button.dropdown-item {
   line-height: 1.25; }
   .menu-list a {
     border-radius: 2px;
-    color: #EEEEEE;
+    color: #4a4a4a;
     display: block;
     padding: 0.5em 0.75em; }
     .menu-list a:hover {
@@ -3385,9 +3385,9 @@ button.dropdown-item {
 
 .message-header {
   align-items: center;
-  background-color: #EEEEEE;
+  background-color: #4a4a4a;
   border-radius: 4px 4px 0 0;
-  color: rgba(0, 0, 0, 0.7);
+  color: #fff;
   display: flex;
   font-weight: 700;
   justify-content: space-between;
@@ -3408,7 +3408,7 @@ button.dropdown-item {
   border-radius: 4px;
   border-style: solid;
   border-width: 0 0 0 4px;
-  color: #EEEEEE;
+  color: #4a4a4a;
   padding: 1.25em 1.5em; }
   .message-body code,
   .message-body pre {
@@ -4524,7 +4524,7 @@ a.navbar-item,
       color: #363636; }
 
 .panel-list a {
-  color: #EEEEEE; }
+  color: #4a4a4a; }
   .panel-list a:hover {
     color: #FF7844; }
 
@@ -4586,7 +4586,7 @@ label.panel-block {
     border-bottom-color: #222831;
     border-bottom-style: solid;
     border-bottom-width: 1px;
-    color: #EEEEEE;
+    color: #4a4a4a;
     display: flex;
     justify-content: center;
     margin-bottom: -1px;
@@ -7854,12 +7854,6 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
   flex-basis: auto;
   flex-grow: 0; }
 
-.select {
-  width: 100%; }
-
-select {
-  width: 100%; }
-
 .carrier_order_row th {
   padding-left: 0 !important;
   width: 48%; }
@@ -7889,11 +7883,17 @@ select {
     border-color: #FF7844; }
   .select2-container .select2-selection .select2-selection__rendered {
     padding-left: 0.75em;
-    padding-right: 0.75em; }
+    padding-right: 0.75em;
+    color: #FF7844; }
   .select2-container .select2-selection .select2-selection__arrow {
     display: none; }
   .select2-container .select2-selection .select2-selection__placeholder {
     color: #EEEEEE; }
+  .select2-container .select2-selection .select2-selection__clear {
+    margin-right: 0;
+    padding-left: 10px; }
+    .select2-container .select2-selection .select2-selection__clear span {
+      color: #FF7844; }
 
 .select2-container.select2-container--open .select2-selection {
   border-color: #FF7844; }
@@ -7919,5 +7919,8 @@ select {
       font-size: 1rem; }
       .select2-container .select2-dropdown .select2-results__options .select2-results__option.select2-results__option--highlighted {
         background: #FF7844; }
+  .select2-container .select2-dropdown .select2-results__option--selected {
+    color: #EEEEEE;
+    background-color: #b83300; }
 
 /*# sourceMappingURL=bulma.css.map */

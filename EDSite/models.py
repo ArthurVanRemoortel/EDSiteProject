@@ -348,10 +348,13 @@ class CarrierMission(models.Model):
 
     @property
     def station_units(self):
-        if self.is_loading:
-            return self.station_live_listing.supply_units
+        if self.carrier_live_listing:
+            if self.is_loading:
+                return self.station_live_listing.supply_units
+            else:
+                return self.station_live_listing.demand_units
         else:
-            return self.station_live_listing.demand_units
+            return 'Unknown'
 
     @property
     def carrier_units(self):
@@ -384,11 +387,13 @@ class CarrierMission(models.Model):
     def progress(self):
         if self.carrier_live_listing:
             if self.is_unloading:
-                return int(self.carrier_live_listing.demand_units/self.units*100)
-            else:
+                print("Unloading: ", self.carrier_live_listing)
                 return 100 - int(self.carrier_live_listing.demand_units/self.units*100)
-
+            else:
+                print("Loading: ", self.carrier_live_listing)
+                return int(self.carrier_live_listing.demand_units/self.units*100)
         else:
+            print('No carrier live listing.')
             return 0
 
     @property

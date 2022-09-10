@@ -56,7 +56,7 @@
                             <td colspan=1>
                                 <div class="field">
                                     <label class="label">Include Carriers</label>
-                                    <div class="select-wide select is-primary">
+                                    <div class="select-wide select is-primary is-fullwidth">
                                         {{ form.include_fleet_carriers }}
                                     </div>
                                 </div>
@@ -64,7 +64,7 @@
                             <td colspan=1>
                                 <div class="field">
                                     <label class="label">Include Planetary</label>
-                                    <div class="select-wide select is-primary">
+                                    <div class="select-wide select is-primary is-fullwidth">
                                         {{ form.include_planetary }}
                                     </div>
                                 </div>
@@ -72,7 +72,7 @@
                             <td colspan=1>
                                 <div class="field">
                                     <label class="label">Pad Size</label>
-                                    <div class="select-wide select is-primary">
+                                    <div class="select-wide select is-primary is-fullwidth">
                                         {{ form.landing_pad_size }}
                                     </div>
                                 </div>
@@ -100,7 +100,7 @@
                             </td>
                             <td colspan=1>
                                 <div class="field">
-                                    <label class="label">Star System</label>
+                                    <label class="label">Star Distance</label>
                                     <div class="control">
                                         {{ form.star_distance}}
                                     </div>
@@ -175,11 +175,13 @@
             const $referenceInput = $('#referenceInput');
 
             function formatStationSelection (station) {
-                return $referenceInput.text()
-            }
+                if (!station.id) {
+                    return null;
+                }
+                return station.text            }
 
             function formatStation (state) {
-                if (state.loading) return "Looking up stations...";
+                if (state.loading) return "Looking up systems...";
                 return state.name;
             }
 
@@ -188,12 +190,11 @@
                 window.location.href = "{% url 'station' station_id=0 %}".replace('0', selectedId);
             }
 
-            function onReferenceSelect (e) {
-            }
-
             makeSelect2(
                 $stationSearchInput,
                 "{% url "api-stations-list" %}",
+                defaultProcessResults,
+                defaultDataFunction,
                 formatStation,
                 formatStationSelection,
                 "Station Name"
@@ -203,11 +204,18 @@
             makeSelect2(
                 $referenceInput,
                 "{% url "api-systems-list" %}",
+                defaultProcessResults,
+                defaultDataFunction,
                 formatStation,
                 formatStationSelection,
                 "Station Name"
             )
-            $referenceInput.on("select2:select", onReferenceSelect);
+
+            {% if reference_system %}
+                var option = new Option("{{ reference_system.name }}", "{{ reference_system.id }}", true, true);
+                $referenceInput.append(option).trigger('change');
+            {% endif %}
+
         });
 
     </script>

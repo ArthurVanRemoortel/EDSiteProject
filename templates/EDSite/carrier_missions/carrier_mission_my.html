@@ -6,22 +6,22 @@
     <title>Carrier Missions</title>
 </head>
 <body>
-<div class="modal" id="create-mission-modal">
+<div class="modal" id="createMissionModal">
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
             <p class="modal-card-title">Create Mission</p>
             <button class="delete" aria-label="close"></button>
         </header>
-        <form action="{% url 'carrier-missions' tab='my'%}" method="post">
+        <form action="{% url 'carrier-missions' tab='my' %}" method="post">
             {% csrf_token %}
             <section class="modal-card-body">
                 <div class="field">
-                    <label class="label">Carrier Name</label>
+                    <label class="label" for="carrierNameField">Carrier Name</label>
                     <div class="control has-icons-left has-icons-right">
-                    <span class="icon is-small is-left">
-                      <i class="fas fa-user"></i>
-                    </span>
+                        <span class="icon is-small is-left">
+                          <i class="fas fa-user"></i>
+                        </span>
                         {{ mission_form.carrier_name }}
                         <span class="icon is-small is-right">
                       <i class="fas fa-check"></i>
@@ -31,21 +31,14 @@
                 </div>
 
                 <div class="field">
-                    <label class="label">Carrier Code</label>
-                    <div class="control has-icons-left has-icons-right">
-                    <span class="icon is-small is-left">
-                      <i class="fas fa-user"></i>
-                    </span>
+                    <label class="label" for="carrierCodeField">Carrier Code</label>
+                    <div class="control">
                         {{ mission_form.carrier_code }}
-                        <span class="icon is-small is-right">
-                      <i class="fas fa-check"></i>
-                    </span>
                     </div>
-                    <p class="help is-info"></p>
                 </div>
 
                 <div class="field">
-                    <label class="label">Username</label>
+                    <label class="label" for="usernameField">Username</label>
                     <div class="control has-icons-left has-icons-right">
                         {{ mission_form.username }}
                         <span class="icon is-small is-left">
@@ -58,50 +51,35 @@
                 </div>
 
                 <div class="field">
-                    <label class="label">Mission Type</label>
-                    <div class="select-wide select is-primary">
+                    <label class="label" for="missionTypeField">Mission Type</label>
+                    <div class="select-wide select is-primary is-fullwidth">
                         {{ mission_form.mission_type }}
                     </div>
                 </div>
 
                 <div class="field">
-                    <label class="label">Commodity</label>
+                    <label class="label" for="commodityField">Commodity</label>
                     <div class="control has-icons-left has-icons-right">
                         {{ mission_form.commodity }}
-                        <span class="icon is-small is-left">
-                      <i class="fas fa-user"></i>
-                    </span>
-                        <span class="icon is-small is-right">
-                      <i class="fas fa-check"></i>
-                    </span>
                     </div>
                 </div>
 
                 <div class="field">
-                    <label class="label">Station</label>
+                    <label class="label" for="stationField">Station</label>
                     <div class="control has-icons-left has-icons-right">
                         {{ mission_form.station }}
-                        <span class="icon is-small is-left">
-                      <i class="fas fa-user"></i>
-                    </span>
-                        <span class="icon is-small is-right">
-                      <i class="fas fa-check"></i>
-                    </span>
                     </div>
                 </div>
 
                 <div class="field">
-                    <label class="label">System</label>
-                    <div class="control has-icons-left has-icons-right">
-                        {{ mission_form.system }}
-                        <span class="icon is-small is-left">
-                      <i class="fas fa-user"></i>
-                    </span>
-                        <span class="icon is-small is-right">
-                      <i class="fas fa-check"></i>
-                    </span>
+                    <div class="control">
+                        <label class="label" for="listingField">Found Listing</label>
+                        <div class="control">
+                            <input class="input" type="text" id="listingField" placeholder="" disabled readonly>
+                        </div>
                     </div>
                 </div>
+
                 <div class="field field-body">
                     <div class="field">
                         <div class="control">
@@ -116,9 +94,9 @@
                     </div>
                     <div class="field">
                         <div class="control">
-                            <label class="label">Unit Price</label>
+                            <label class="label" for="unitPriceField">Unit Price</label>
                             <div class="control has-icons-left">
-                                <input class="input" type="text" id="unit_price_field" placeholder="" disabled readonly>
+                                <input class="input" type="text" id="unitPriceField" placeholder="" disabled readonly>
                                 <span class="icon is-small is-left">
                               <i class="fas fa-user"></i>
                             </span>
@@ -129,7 +107,7 @@
                 <div class="field field-body">
                     <div class="field">
                         <div class="control">
-                            <label class="label">Units</label>
+                            <label class="label" for="unitsField">Units</label>
                             <div class="control has-icons-left">
                                 {{ mission_form.units }}
                                 <span class="icon is-small is-left">
@@ -140,9 +118,9 @@
                     </div>
                     <div class="field">
                         <div class="control">
-                            <label class="label">Total Price</label>
+                            <label class="label" for="totalPriceField">Total Price</label>
                             <div class="control has-icons-left">
-                                <input class="input" type="text" id="total_price_field" placeholder="" disabled readonly>
+                                <input class="input" type="text" id="totalPriceField" placeholder="" disabled readonly>
                                 <span class="icon is-small is-left">
                               <i class="fas fa-user"></i>
                             </span>
@@ -161,10 +139,18 @@
     </div>
 </div>
 
-<button class="button is-primary js-modal-trigger" data-target="create-mission-modal">Create Mission</button>
+<button class="button is-primary js-modal-trigger" data-target="createMissionModal" id="missionModal">Create Mission
+</button>
 
 </body>
 </html>
+
+
+{% if current_carrier %}
+    {{ current_carrier.1|js|json_script:"carrierData" }}
+{% endif %}
+
+
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // Functions to open and close a modal
@@ -209,5 +195,248 @@
                 closeAllModals();
             }
         });
+    });
+
+    let station = null;
+    let carrier = null;
+    let commodity = null;
+    let mission_type = null;
+    let listing = null;
+
+    $(document).ready(function () {
+        const $carrierCodeField = $('#carrierCodeField');
+        const $commodityField = $('#commodityField');
+        const $stationField = $('#stationField');
+
+        const $unitPriceField = $('#unitPriceField');
+        const $totalPriceField = $('#totalPriceField');
+
+        const $workerProfitField = $('#workerProfitField');
+        const $unitsField = $('#unitsField');
+
+        const $listingField = $('#listingField');
+        const $missionTypeField = $('#missionTypeField');
+
+        setMissionType()
+        function setMissionType() {
+            mission_type = document.getElementById("missionTypeField").value;
+            console.log("SET MISSION TYPE:", mission_type)
+        }
+
+        function setStation(){
+            console.log("SETTING STATION:", station)
+            if (!station) {
+                $stationField.val(null).trigger('change');
+                return
+            }
+            let station_text = station.name
+            const option = new Option(station_text, station.id, true, true);
+            $stationField.append(option).trigger('change');
+        }
+
+        function setListing(){
+            console.log("SET LISTING: ", listing)
+            if (!listing) {
+                $listingField.val(null).trigger('change');
+                return
+            }
+            let listing_test = "Unknown"
+            if (mission_type === "L") {
+                listing_test = `${listing.supply_price} CR and a supply of ${listing.supply_units} units`;
+            } else if (mission_type === "U") {
+                listing_test = `${listing.demand_price} CR and a demand of ${listing.demand_units} units`;
+            }
+            $listingField.val(listing_test)
+        }
+
+        function tryGuessStation() {
+            // TODO: Consider the suppy units when guessing.
+            {#if ($stationField.val()) return; // Don't overwrite is station is already set by user.#}
+            if (!commodity || !carrier) return;
+
+            $.ajax({
+                url: "{% url 'api-listings-list' %}",
+                type: "GET",
+                data: {
+                    'commodity': commodity.id,
+                    'system__station': carrier.system.id,
+                    'type': ((mission_type === 'L') ? 'supply' : 'demand'),
+                    'units': 1000
+                },
+                success: function (data) {
+                    console.log("GUESSING STATION:", data)
+                    const bestListing = data.results.filter((listing) => !listing.station.fleet)[0]
+                    listing = bestListing
+                    if (!bestListing){
+                        station = null
+                    } else {
+                        station = bestListing.station
+                    }
+                    setStation()
+                    setListing()
+                    calculatePriceAndTotal()
+                },
+            });
+        }
+
+        function tryGetListing() {
+            if (!commodity || !station) return;
+            $.ajax({
+                url: "{% url 'api-listings-list' %}",
+                type: "GET",
+                data: {
+                    'commodity': commodity.id,
+                    'station': station.id,
+                    'type': ((mission_type === 'L') ? 'supply' : 'demand'),
+                    'units': 1000
+                },
+                success: function (data) {
+                    console.log("tryGetListing:", data)
+                    const bestListings = data.results[0]
+                    if (bestListings){
+                        listing = bestListings
+                        station = bestListings.station
+                        setListing()
+                        calculatePriceAndTotal()
+                    }
+                },
+            });
+        }
+
+        function calculatePriceAndTotal() {
+            if (!listing) {
+                $unitPriceField.val(null)
+                $totalPriceField.val(null)
+                return
+            }
+            const profit = parseInt($workerProfitField.val(), 0)
+            const units = parseInt($unitsField.val(), 0)
+
+            if (profit === 0) return;
+
+            if (mission_type === "L") {
+                const unitPrice = listing.supply_price + profit
+                $unitPriceField.val(unitPrice + ' CR')
+                $totalPriceField.val(unitPrice * units + ' CR')
+            } else if (mission_type === "U") {
+                const unitPrice = listing.demand_price + profit
+                $unitPriceField.val(unitPrice + ' CR')
+                $totalPriceField.val(unitPrice * units + ' CR')
+            }
+        }
+
+        $missionTypeField.change(function() {
+            setMissionType()
+            tryGuessStation()
+        });
+
+        $workerProfitField.change(function() {
+            tryGuessStation()
+        });
+
+        $unitsField.change(function() {
+            tryGuessStation()
+        });
+
+        $carrierCodeField.select2({
+            ajax: {
+                delay: 500,
+                url: "{% url "api-stations-list" %}",
+                dataType: "json",
+                type: "GET",
+                data: function (params) {
+                    return {
+                        name_like: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: defaultProcessResults,
+                cache: false
+            },
+            minimumInputLength: 3,
+            templateResult: function (state) {
+                if (state.loading) return "Looking up carriers...";
+                return state.name;
+            },
+            templateSelection: function (carrier) {
+                if (!carrier.id) return null;
+                return carrier.text
+            },
+            placeholder: "Carrier Name",
+            allowClear: true
+        });
+        $carrierCodeField.on("select2:select", function (event) {
+            carrier = event.params.data
+        });
+
+        $commodityField.select2({
+            ajax: {
+                delay: 500,
+                url: "{% url "api-commodities-list" %}",
+                dataType: "json",
+                type: "GET",
+                data: function (params) {
+                    return {
+                        name_like: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: defaultProcessResults,
+                cache: false
+            },
+            minimumInputLength: 3,
+            templateResult: function (state) {
+                if (state.loading) return "Looking up commodities...";
+                return state.name;
+            },
+            templateSelection: function (commodity) {
+                if (!commodity.id) return null;
+                return commodity.text
+            },
+            placeholder: "Commodity Name",
+            allowClear: true
+        });
+        $commodityField.on("select2:select", function (event) {
+            commodity = event.params.data
+            tryGuessStation()
+        });
+
+        $stationField.select2({
+            ajax: {
+                delay: 500,
+                url: "{% url "api-stations-list" %}",
+                dataType: "json",
+                type: "GET",
+                data: function (params) {
+                    return {
+                        name_like: params.term,
+                        page: params.page || 1
+                    };
+                },
+                processResults: defaultProcessResults,
+                cache: false
+            },
+            minimumInputLength: 3,
+            templateResult: function (state) {
+                if (state.loading) return "Looking up stations...";
+                return state.name + ' / ' + state.system.name;
+            },
+            templateSelection: function (station) {
+                if (!station.id) return null;
+                return station.text
+            },
+            placeholder: "Station Name",
+            allowClear: true
+        });
+        $stationField.on("select2:select", function (event) {
+            station = event.params.data
+            tryGetListing()
+        });
+
+        {% if current_carrier %}
+            carrier = JSON.parse(document.getElementById('carrierData').textContent);
+            const carrier_option = new Option(carrier.name, carrier.id, true, true);
+            $carrierCodeField.append(carrier_option).trigger('change');
+        {% endif %}
     });
 </script>

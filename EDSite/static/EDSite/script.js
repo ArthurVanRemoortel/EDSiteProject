@@ -1,5 +1,31 @@
+function defaultProcessResults (data, params) {
+    var results = $.map(data.results,function (obj) {
+        obj.text = obj.name;
+        return obj;
+    });
+    return {
+        results: results,
+        pagination: {
+            more: data.next !== null
+        }
+    };
+}
 
-function makeSelect2($inputRef, queryUrl, formatFunction, formatSelectionFunction, placeholder) {
+function defaultDataFunction (data, params) {
+    var results = $.map(data.results,function (obj) {
+        obj.text = obj.name;
+        return obj;
+    });
+    return {
+        results: results,
+        pagination: {
+            more: data.next !== null
+        }
+    };
+}
+
+
+function makeSelect2($inputRef, queryUrl, processResults, dataFunction, formatFunction, formatSelectionFunction, placeholder) {
     $inputRef.select2({
         ajax: {
             delay: 500,
@@ -12,25 +38,14 @@ function makeSelect2($inputRef, queryUrl, formatFunction, formatSelectionFunctio
                     page: params.page || 1
                 };
             },
-            processResults: function (data, params) {
-                return {
-                    results: $.map(data.results, function(item) {
-                        return {
-                            id: item.id,
-                            text: item.name,
-                            name: item.name,
-                        }}),
-                    pagination: {
-                        more: data.next !== null
-                    }
-                };
-            },
+            processResults: processResults,
             cache: false
         },
         minimumInputLength: 3,
         templateResult: formatFunction,
         templateSelection: formatSelectionFunction,
         placeholder: placeholder,
+        allowClear: true
     });
 }
 

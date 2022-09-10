@@ -10,7 +10,7 @@ $orange: #D65A31
 //$light-orange: #FF7844
 $light-orange: #FF7844
 $almost-white: #EEEEEE
-$text: $almost-white
+$text-color: $almost-white
 
 $light-grey: #b39999
 $almost-black: #191c21
@@ -159,11 +159,11 @@ $footer-padding: 3rem 1.5rem 2.5rem
   flex-basis: auto
   flex-grow: 0
 
-.select
-  width: 100%
-
-select
-  width: 100%
+//.select
+//  width: 100%
+//
+//select
+//  width: 100%
 
 .carrier_order_row
   th
@@ -203,14 +203,19 @@ select
     .select2-selection__rendered
       padding-left: 0.75em
       padding-right: 0.75em
+      color: $primary
 
     .select2-selection__arrow
       display: none
 
     .select2-selection__placeholder
-      color: $text
+      color: $text-color
 
-
+    .select2-selection__clear
+      margin-right: 0
+      padding-left: 10px
+      span
+        color: $primary
 
   &.select2-container--open
     .select2-selection
@@ -235,7 +240,7 @@ select
     .select2-results__options
       max-height: 210px
       background: $darkest
-      color: $almost-white
+      color: $text-color
       box-shadow: $panel-shadow
       .select2-results__option
         padding: 0.75em
@@ -244,3 +249,7 @@ select
 
         &.select2-results__option--highlighted
           background: $primary
+
+    .select2-results__option--selected
+      color: $text-color
+      background-color: $primary-dark

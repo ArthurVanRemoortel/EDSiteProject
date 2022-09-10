@@ -22,7 +22,10 @@ from EDSite.models import CommodityCategory, Commodity, Station, LiveListing, Sy
 from EDSiteProject import settings
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 
-CURRENT_SYSTEM = System.objects.get(name="Sol")  # Sol system
+USER_CARRIER = ('Normandy SR-404', Station.objects.get(pk=203831))
+CURRENT_SYSTEM = USER_CARRIER[1].system
+
+
 if settings.LIVE_UPDATER:
     print('Starting the live listener.')
     threading.Thread(target=EDData().start_live_listener).start()
@@ -38,7 +41,7 @@ def base_context(request) -> {}:
     return {
         'current_user': logged_in_user(request),
         'current_system': CURRENT_SYSTEM,
-        'current_carrier': ('Normandy SR-404', 'K7Q-BQL'),
+        'current_carrier': USER_CARRIER,
         'DEBUG_MODE': settings.DEBUG_MODE
     }
 
@@ -57,9 +60,8 @@ def systems(request):
         filtered_systems = System.objects.order_by('id')
     else:
         form = SystemsForm(request.POST)
-        search = form.data['search']
-        ref_system_name_or_id = form.data['reference_system']
-        only_populated = form.data['only_populated'] == 'yes'
+        ref_system_name_or_id = form.data.get('reference_system')
+        only_populated = form.data.get('only_populated') == 'yes'
 
         if ref_system_name_or_id and ref_system_name_or_id.isdigit():
             ref_system = System.objects.get(pk=int(ref_system_name_or_id))
@@ -73,9 +75,11 @@ def systems(request):
 
     filtered_systems = filtered_systems[:40]
     if ref_system:
+        print('Reference: ', ref_system)
         distances = {other_system.id: int(other_system.distance_to(ref_system)) for other_system in filtered_systems}
         filtered_systems = sorted(list(filtered_systems), key=lambda filtered_system: distances[filtered_system.id], reverse=False)
         context['reference_distances'] = distances
+        context['reference_system'] = ref_system
 
     context['systems'] = filtered_systems
     context['form'] = form
@@ -98,14 +102,13 @@ def stations(request):
         filtered_stations = Station.objects.order_by('id')
     else:
         form = StationsForm(request.POST)
-        search = form.data['search']
-        include_fleet_carriers = form.data['include_fleet_carriers'] == 'yes'
-        include_planetary = form.data['include_planetary'] == 'yes'
-        landing_pad_size = form.data['landing_pad_size']
-        star_distance = form.data['star_distance']
-        system_distance = form.data['system_distance']
+        include_fleet_carriers = form.data.get('include_fleet_carriers') == 'yes'
+        include_planetary = form.data.get('include_planetary') == 'yes'
+        landing_pad_size = form.data.get('landing_pad_size')
+        star_distance = form.data.get('star_distance')
+        system_distance = form.data.get('system_distance')
 
-        ref_system_name_or_id = form.data['reference_system']
+        ref_system_name_or_id = form.data.get('reference_system')
         if system_distance and system_distance.isdigit():
             system_distance = int(system_distance)
 
@@ -142,6 +145,7 @@ def stations(request):
         if system_distance:
             filtered_stations = filter(lambda filtered_station: distances[filtered_station.id] <= int(system_distance), list(filtered_stations))
         context['reference_distances'] = distances
+        context['reference_system'] = ref_system
 
     context['stations'] = filtered_stations
     context['form'] = form
@@ -184,14 +188,13 @@ def commodity(request, commodity_id):
     else:  # POST
         form = CommodityForm(request.POST)
         if form.is_valid():
-            include_odyssey = form.data['include_odyssey'] == 'yes'
-            include_fleet_carriers = form.data['include_fleet_carriers'] == 'yes'
-            include_planetary = form.data['include_planetary'] == 'yes'
-            landing_pad_size = form.data['landing_pad_size']
-            minimum_units = form.data['minimum_units'] if form.data['minimum_units'] else 0
-            buy_or_sell = form.data['buy_or_sell']
-
-            ref_system_name_or_id = form.data['reference_system']
+            include_odyssey = form.data.get('include_odyssey') == 'yes'
+            include_fleet_carriers = form.data.get('include_fleet_carriers') == 'yes'
+            include_planetary = form.data.get('include_planetary') == 'yes'
+            landing_pad_size = form.data.get('landing_pad_size')
+            minimum_units = form.data.get('minimum_units') if form.data.get('minimum_units') else 0
+            buy_or_sell = form.data.get('buy_or_sell')
+            ref_system_name_or_id = form.data.get('reference_system')
 
             if ref_system_name_or_id and ref_system_name_or_id.isdigit():
                 ref_system = System.objects.get(pk=int(ref_system_name_or_id))
@@ -220,6 +223,10 @@ def commodity(request, commodity_id):
             elif landing_pad_size == "L":
                 filtered_listings = filtered_listings.filter(Q(station__pad_size='L'))
             ordering = '-demand_price' if buy_or_sell == 'sell' else 'supply_price'
+        else:
+            print("Carrier mission form was not valid:", form.errors)
+
+
 
     filtered_listings = filtered_listings.order_by(ordering)  # TODO: Performance. This makes it slow.
     filtered_listings = filtered_listings[:40]
@@ -228,6 +235,7 @@ def commodity(request, commodity_id):
         distances = {listing.id: int(listing.station.system.distance_to(ref_system)) for listing in filtered_listings}
         # filtered_listings = sorted(list(filtered_listings), key=lambda filtered_system: distances[filtered_system.id], reverse=False)
         context['reference_distances'] = distances
+        context['reference_system'] = ref_system
     else:
         filtered_listings = filtered_listings.select_related('station__system')
 
@@ -263,59 +271,54 @@ def carrier_missions(request, tab=None):
         context['mission_distances'] = {mission.id: int(mission.station.system.distance_to(CURRENT_SYSTEM)) for mission in missions}
 
     elif tab == "my":
+        # TODO: Show warning if the carrier is not located in the mission system.
         context['my_missions'] = [[1, 2, 3], [1]]
         if request.method == 'GET':
             mission_form = CarrierMissionForm()
-            if base_context_local['current_carrier']:
-                mission_form.fields['carrier_name'].initial = base_context_local['current_carrier'][0]
-                mission_form.fields['carrier_code'].initial = base_context_local['current_carrier'][1]
-            if base_context_local['current_user']:
-                mission_form.fields['username'].initial = base_context_local['current_user'].username
-            if base_context_local['current_system']:
-                system: System = base_context_local['current_system']
-                mission_form.fields['system'].initial = system.name
-
-            mission_form.fields['system'].initial = "Ba Po"
-            mission_form.fields['station'].initial = "Lewitt Works"
-            mission_form.fields['commodity'].initial = "Bauxite"
             mission_form.fields['worker_profit'].initial = 12000
             mission_form.fields['units'].initial = 15000
+
+            if base_context_local.get('current_user'):
+                mission_form.fields['username'].initial = base_context_local.get('current_user').username
+
+            if base_context_local.get('current_carrier'):
+                mission_form.fields['carrier_name'].initial = base_context_local.get('current_carrier')[0]
 
         else:
             mission_form = CarrierMissionForm(request.POST)
             if mission_form.is_valid():
-                carrier_name_raw = mission_form.data['carrier_name']
-                carrier_code_raw = mission_form.data['carrier_code']
-                username_raw = mission_form.data['username']
-                system_raw = mission_form.data['system']
-                station_raw = mission_form.data['station']
-                commodity_raw = mission_form.data['commodity']
-                worker_profit_raw = mission_form.data['worker_profit']
-                mission_type_raw = mission_form.data['mission_type']
-                units_raw = mission_form.data['units']
-
-                station = Station.objects.get(Q(name=station_raw) & Q(system__name=system_raw))
-                carrier = Station.objects.get(Q(name=carrier_code_raw))
-                commodity = Commodity.objects.get(name=commodity_raw)
-                current_user = logged_in_user(request)
-
-                if current_user and commodity and station:
-                    carrier_mission = CarrierMission(
-                        user=current_user,
-                        mode=mission_type_raw,
-                        station=station,
-                        carrier=carrier,
-                        carrier_name=carrier_name_raw,
-                        commodity=commodity,
-                        units=units_raw,
-                        worker_profit=worker_profit_raw,
-                        active=True,
-                        date_posted=make_timezone_aware(datetime.datetime.now()),
-                        date_completed=None,
-                    )
-                    carrier_mission.save()
+                carrier_name_raw = mission_form.data.get('carrier_name')
+                carrier_id = mission_form.data.get('carrier_code')
+                username_raw = mission_form.data.get('username')
+                station_id = mission_form.data.get('station')
+                commodity_id = mission_form.data.get('commodity')
+                worker_profit_raw = mission_form.data.get('worker_profit')
+                mission_type_raw = mission_form.data.get('mission_type')
+                units_raw = mission_form.data.get('units')
+                if not station_id or not commodity_id or not carrier_id:
+                    print(f"CarrierMissionForm choices are not valid: station_id={station_id}, commodity_id={commodity_id}, carrier_id={carrier_id}")
                 else:
-                    print("Something was None")
+                    station = Station.objects.get(pk=station_id)
+                    carrier = Station.objects.get(pk=carrier_id)
+                    commodity = Commodity.objects.get(pk=commodity_id)
+                    current_user = logged_in_user(request)
+                    if current_user and commodity and station and carrier:
+                        carrier_mission = CarrierMission(
+                            user=current_user,
+                            mode=mission_type_raw,
+                            station=station,
+                            carrier=carrier,
+                            carrier_name=carrier_name_raw,
+                            commodity=commodity,
+                            units=units_raw,
+                            worker_profit=worker_profit_raw,
+                            active=True,
+                            date_posted=make_timezone_aware(datetime.datetime.now()),
+                            date_completed=None,
+                        )
+                        carrier_mission.save()
+                    else:
+                        print("Something was None")
             else:
                 print("CarrierMissionForm is not valid:", mission_form.data)
                 print(mission_form.errors)

@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.forms import ModelForm
-from django.forms.widgets import NumberInput, PasswordInput
+from django.forms.widgets import PasswordInput, NumberInput
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 YES_NO_CHOICES = [
@@ -17,9 +17,14 @@ LANDING_PAD_CHOICES = [
 ]
 
 
+class ChoiceFieldNoValidation(forms.ChoiceField):
+    def validate(self, value):
+        pass
+
+
 class CommodityForm(forms.Form):
-    reference_system = forms.CharField(
-        widget=forms.TextInput(
+    reference_system = forms.ChoiceField(
+        widget=forms.Select(
             attrs={'class': 'input', 'id': 'referenceInput'}
         ),
         required=False,
@@ -67,8 +72,8 @@ class SystemsForm(forms.Form):
         ),
         required=False,
     )
-    reference_system = forms.CharField(
-        widget=forms.TextInput(
+    reference_system = forms.ChoiceField(
+        widget=forms.Select(
             attrs={'class': 'input', 'id': 'referenceInput'}
         ),
         required=False,
@@ -91,8 +96,8 @@ class StationsForm(forms.Form):
         ),
         required=False,
     )
-    reference_system = forms.CharField(
-        widget=forms.TextInput(
+    reference_system = forms.ChoiceField(
+        widget=forms.Select(
             attrs={'class': 'input', 'id': 'referenceInput'}
         ),
         required=False,
@@ -110,13 +115,13 @@ class StationsForm(forms.Form):
         choices=LANDING_PAD_CHOICES,
     )
     star_distance = forms.CharField(
-        widget=forms.NumberInput(
+        widget=forms.TextInput(
             attrs={'class': 'input'},
         ),
         required=False,
     )
     system_distance = forms.CharField(
-        widget=forms.NumberInput(
+        widget=forms.TextInput(
             attrs={'class': 'input'},
         ),
         required=False,
@@ -126,53 +131,50 @@ class StationsForm(forms.Form):
 class CarrierMissionForm(forms.Form):
     carrier_name = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'carrier_field'},
+            attrs={'class': 'input', 'id': 'carrierNameField'},
         ),
         required=True,
     )
-    carrier_code = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'carrier_code_field'},
+    carrier_code = ChoiceFieldNoValidation(
+        widget=forms.Select(
+            attrs={'class': 'input', 'id': 'carrierCodeField', 'data-width': "100%"},
         ),
         required=True,
     )
     username = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input', 'readonly': True, 'id': 'username_field'},
+            attrs={'class': 'input', 'readonly': True, 'id': 'usernameField'},
         ),
         required=True,
     )
     mission_type = forms.ChoiceField(
         required=True,
         choices=[('L', 'Loading'), ('U', 'Unloading')],
+        widget=forms.Select(
+            attrs={'id': 'missionTypeField'},
+        ),
     )
-    commodity = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'commodity_field'},
+    commodity = ChoiceFieldNoValidation(
+        widget=forms.Select(
+            attrs={'class': 'input', 'id': 'commodityField', 'data-width': "100%"},
         ),
         required=True,
     )
-    station = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'station_field'},
-        ),
-        required=True,
-    )
-    system = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'system_field'},
+    station = ChoiceFieldNoValidation(
+        widget=forms.Select(
+            attrs={'class': 'input', 'id': 'stationField', 'data-width': "100%"},
         ),
         required=True,
     )
     worker_profit = forms.CharField(
-        widget=forms.NumberInput(
-            attrs={'class': 'input', 'id': 'worker_profit_field'},
+        widget=forms.TextInput(
+            attrs={'class': 'input', 'id': 'workerProfitField'},
         ),
         required=True,
     )
     units = forms.CharField(
-        widget=forms.NumberInput(
-            attrs={'class': 'input', 'id': 'units_field'},
+        widget=forms.TextInput(
+            attrs={'class': 'input', 'id': 'unitsField'},
         ),
         required=True,
     )

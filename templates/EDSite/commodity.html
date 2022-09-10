@@ -102,7 +102,7 @@
                             <td>
                                 <div class="field">
                                     <label class="label">Include Odyssey</label>
-                                    <div class="select-wide select is-primary">
+                                    <div class="select-wide select is-primary is-fullwidth">
                                         {{ form.include_odyssey }}
                                     </div>
                                 </div>
@@ -110,7 +110,7 @@
                             <td>
                                 <div class="field">
                                     <label class="label">Include Carriers</label>
-                                    <div class="select is-primary">
+                                    <div class="select is-primary is-fullwidth">
                                         {{ form.include_fleet_carriers }}
                                     </div>
                                 </div>
@@ -118,7 +118,7 @@
                             <td>
                                 <div class="field">
                                     <label class="label">Include Planetary</label>
-                                    <div class="select is-primary">
+                                    <div class="select is-primary is-fullwidth">
                                         {{ form.include_planetary }}
                                     </div>
                                 </div>
@@ -129,7 +129,7 @@
                             <td>
                                 <div class="field">
                                     <label class="label">Minimum Pad Size</label>
-                                    <div class="select is-primary">
+                                    <div class="select is-primary is-fullwidth">
                                         {{ form.landing_pad_size }}
                                     </div>
                                 </div>
@@ -145,7 +145,7 @@
                             <td>
                                 <div class="field">
                                     <label class="label">Buy or Sell</label>
-                                    <div class="select is-primary">
+                                    <div class="select is-primary is-fullwidth">
                                         {{ form.buy_or_sell }}
                                     </div>
                                 </div>
@@ -238,7 +238,10 @@
             const $referenceInput = $('#referenceInput');
 
             function formatSystemSelection (system) {
-                return $referenceInput.text()
+                if (!system.id) {
+                    return null;
+                }
+                return system.text
             }
 
             function formatSystem (state) {
@@ -246,22 +249,21 @@
                 return state.name;
             }
 
-            function onSearchSelect (e) {
-                const selectedId = e.params.data.id;
-                window.location.href = "{% url 'system' system_id=0 %}".replace('0', selectedId);
-            }
-
-            function onReferenceSelect (e) {
-            }
-
             makeSelect2(
                 $referenceInput,
                 "{% url "api-systems-list" %}",
+                defaultProcessResults,
+                defaultDataFunction,
                 formatSystem,
                 formatSystemSelection,
                 "System Name"
             )
-            $referenceInput.on("select2:select", onReferenceSelect);
+
+            {% if reference_system %}
+                var option = new Option("{{ reference_system.name }}", "{{ reference_system.id }}", true, true);
+                $referenceInput.append(option).trigger('change');
+            {% endif %}
+
         });
 
     </script>
