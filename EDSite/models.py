@@ -217,18 +217,15 @@ class Station(models.Model):
                     e.update(
                         **{key: value for key, value in model_to_dict(updated_ll).items() if
                            key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
-                                   'from_live']}
-                    )
+                                   'from_live']})
 
         if updated_listings:
-            # print(f"Deleting ll: {len(exising_listings) - len(updated_listings)}")
-            ld = LiveListing.objects.filter(Q(station_tradedangerous_id=self.tradedangerous_id) & ~Q(pk__in=[ll.id for ll in updated_listings])).delete()
+            LiveListing.objects.filter(Q(station_tradedangerous_id=self.tradedangerous_id) & ~Q(pk__in=[ll.id for ll in updated_listings])).delete()
 
         if new_listings:
             LiveListing.objects.bulk_create(new_listings)
 
         if new_historic_listings:
-            # print("Historic: ", len(new_historic_listings))
             HistoricListing.objects.bulk_create(new_historic_listings)
 
     @property
@@ -387,13 +384,10 @@ class CarrierMission(models.Model):
     def progress(self):
         if self.carrier_live_listing:
             if self.is_unloading:
-                print("Unloading: ", self.carrier_live_listing)
                 return 100 - int(self.carrier_live_listing.demand_units/self.units*100)
             else:
-                print("Loading: ", self.carrier_live_listing)
                 return int(self.carrier_live_listing.demand_units/self.units*100)
         else:
-            print('No carrier live listing.')
             return 0
 
     @property

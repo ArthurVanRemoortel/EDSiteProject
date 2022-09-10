@@ -43,4 +43,4 @@ TODO:
   - Admin tools.
   - Store large data folder outside of docker container.
   - Load slow pages asynchronously.
-  - Redis data container not persistent on linux?
+  - Live updated can sometimes discover new carriers that don't exist yet. Create them with placeholder values for minimal functionality.

@@ -148,12 +148,14 @@ class LiveListener:
 
     def process_messages(self):
         to_update_listings = []
-        to_update_stations = set()
+        to_update_stations: {int: Station} = {}
         new_stations = []
         new_listings: {Station, [LiveListing]} = {}
         new_historic_listings = []
-        carriers_of_interest = self.ed_data.get_carriers_of_interest() # TODO: Update this regularly.
+        carriers_of_interest = self.ed_data.get_carriers_of_interest()  # TODO: Update this regularly.
+
         while self.active:
+
             if self.paused:
                 time.sleep(1)
                 continue
@@ -166,12 +168,20 @@ class LiveListener:
                     if station.name == "K7Q-BQL":
                         print(f"Updating station listing of {station}({station.id})({station.tradedangerous_id}) to {len(listings)}")
                     station.set_listings(listings)
+                    if station.id not in to_update_stations:
+                        to_update_stations[station.id] = station
+                    try:
+                        to_update_stations[station.id].modified = listings[0].modified
+                    except IndexError:
+                        to_update_stations[station.id].modified = make_timezone_aware(datetime.now())
                 new_listings = {}
-            if to_update_stations:
+
+            if len(to_update_stations.keys()) > 0:
                 with transaction.atomic():
-                    for station in to_update_stations:
-                        Station.objects.filter(id=station.id).update(system_id=station.system_id)
-                to_update_stations = set()
+                    for station in to_update_stations.values():
+                        Station.objects.filter(id=station.id).update(system_id=station.system_id, modified=station.modified)
+                to_update_stations = {}
+
             try:
                 entry = self.data_queue.popleft()
             except IndexError:
@@ -204,9 +214,8 @@ class LiveListener:
                         system = self.ed_data.system_names.get(system_name)
                         if system:
                             station.system_id = system.id
-                            to_update_stations.add(station)
+                            to_update_stations[station.id] = station
                             print(f'Changed the station {station} to system {system}')
-                            break
                         else:
                             pass
                             # TODO: New systems not in db yet.
@@ -227,7 +236,6 @@ class LiveListener:
                                 fixed_name += 's'
                             commodity = self.commodity_names.get(fixed_name)
                     if commodity:
-                    #     live_listings: LiveListing = station_listings.get(commodity.id)
                         demand_price = commodity_entry['sellPrice']
                         supply_price = commodity_entry['buyPrice']
                         demand_units = commodity_entry['demand']

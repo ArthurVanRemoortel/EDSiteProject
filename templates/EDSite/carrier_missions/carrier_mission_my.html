@@ -220,11 +220,11 @@
         setMissionType()
         function setMissionType() {
             mission_type = document.getElementById("missionTypeField").value;
-            console.log("SET MISSION TYPE:", mission_type)
+            {#console.log("SET MISSION TYPE:", mission_type)#}
         }
 
         function setStation(){
-            console.log("SETTING STATION:", station)
+            {#console.log("SETTING STATION:", station)#}
             if (!station) {
                 $stationField.val(null).trigger('change');
                 return
@@ -235,7 +235,7 @@
         }
 
         function setListing(){
-            console.log("SET LISTING: ", listing)
+            {#console.log("SET LISTING: ", listing)#}
             if (!listing) {
                 $listingField.val(null).trigger('change');
                 return
@@ -264,7 +264,7 @@
                     'units': 1000
                 },
                 success: function (data) {
-                    console.log("GUESSING STATION:", data)
+                    {#console.log("GUESSING STATION:", data)#}
                     const bestListing = data.results.filter((listing) => !listing.station.fleet)[0]
                     listing = bestListing
                     if (!bestListing){
