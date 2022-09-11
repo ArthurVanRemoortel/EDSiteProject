@@ -37,6 +37,7 @@ TODO:
   - Show price fluctuations of commodities.
   - Remember user location.
   - Live updater needs to update redis cache too.
+  - Improvements to autocomplete text.
 - Fixes:
   - Auto background updates
   - Testing

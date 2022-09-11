@@ -27,8 +27,9 @@ CURRENT_SYSTEM = USER_CARRIER[1].system
 
 
 if settings.LIVE_UPDATER:
+    # TODO: Move this.
     print('Starting the live listener.')
-    threading.Thread(target=EDData().start_live_listener).start()
+    threading.Thread(target=EDData().start_live_listener, daemon=True).start()
 else:
     print('Not starting the live listener.')
 
@@ -176,7 +177,6 @@ def commodities(request):
 def commodity(request, commodity_id):
     commodity = Commodity.objects.get(pk=commodity_id)
     filtered_listings: [LiveListing] = []
-    t0 = time.time()
     context = {}
     ref_system = None
     ordering = '-demand_price'
@@ -226,8 +226,6 @@ def commodity(request, commodity_id):
         else:
             print("Carrier mission form was not valid:", form.errors)
 
-
-
     filtered_listings = filtered_listings.order_by(ordering)  # TODO: Performance. This makes it slow.
     filtered_listings = filtered_listings[:40]
     if ref_system:
@@ -242,8 +240,6 @@ def commodity(request, commodity_id):
     context['commodity'] = commodity
     context['listings'] = list(filtered_listings)
     context['form'] = form
-
-    print("time =", time.time() - t0)
     return render(request, 'EDSite/commodity.html', base_context(request) | context)
 
 

@@ -162,7 +162,6 @@ class LiveListener:
             if len(self.data_queue) > 5:
                 print(f'WARNING: {len(self.data_queue)} items on queue.')
 
-
             if new_listings:
                 for station, listings in new_listings.items():
                     if station.name == "K7Q-BQL":
@@ -174,6 +173,14 @@ class LiveListener:
                         to_update_stations[station.id].modified = listings[0].modified
                     except IndexError:
                         to_update_stations[station.id].modified = make_timezone_aware(datetime.now())
+                    for new_listing in listings:
+                        cached_buy, cached_sell = new_listing.cache_if_better()
+                        # if cached_buy:
+                        #     print(f"Updated best buy to\n\t{new_listing}")
+                        # if cached_sell:
+                        #     print(f"Updated best sell to\n\t{new_listing}")
+                        # if cached_buy or cached_sell:
+                        #     print("")
                 new_listings = {}
 
             if len(to_update_stations.keys()) > 0:

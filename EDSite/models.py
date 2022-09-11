@@ -251,9 +251,6 @@ class LiveListing(models.Model):
     from_live = models.BooleanField()
 
     class Meta:
-        # index_together = [
-        #     ("commodity_id", "station_id"),
-        # ]
         ordering = ['-id']
 
     @property
@@ -264,9 +261,61 @@ class LiveListing(models.Model):
         return self.supply_units > minimum
 
     def is_high_demand(self, minimum=200):
-        # if self.station.station_type == StationType.FLEET:
-        #     return self.demand_units > 200
         return self.demand_units > minimum
+
+    def is_better_than(self, other: 'LiveListing', mode: str) -> bool:
+        if mode == "supply":
+            return self.supply_price <= other.supply_price
+        elif mode == "demand":
+            return self.demand_price >= other.demand_price
+        else:
+            return False
+
+    def cache_if_better(self) -> (bool, bool):
+        """
+        TODO: This is a mess.
+        :return: Boolean indicating if it was cached
+        """
+        modified_buy = False
+        modified_sell = False
+        try:
+            original_best_buy, original_best_sell  = cache.get(f'best_{self.commodity_id}')
+        except TypeError:
+            original_best_buy, original_best_sell = (None, None)
+
+        best_buy = original_best_buy
+        best_sell = original_best_sell
+        if self.is_recently_modified:
+            if original_best_buy and self.station_id == original_best_buy.station_id:
+                best_buy = self
+                modified_buy = True
+            elif self.is_high_demand() and self.demand_units > 0 and self.demand_price > 0:
+                if not best_buy or self.is_better_than(best_buy, 'demand'):
+                    best_buy = self
+                    modified_buy = True
+
+            if original_best_sell and self.station_id == original_best_sell.station_id:
+                best_sell = self
+                modified_sell = True
+            elif self.is_high_supply() and self.supply_price > 0:
+                if not best_sell or self.is_better_than(best_sell, 'supply'):
+                    best_sell = self
+                    modified_sell = True
+
+        if modified_buy or modified_sell:
+            is_fleet = self.station.station_type == StationType.FLEET
+            if modified_buy and is_fleet:
+                modified_buy = False
+                best_buy = original_best_buy
+            if modified_sell and is_fleet:
+                modified_sell = False
+                best_buy = original_best_sell
+        if modified_buy or modified_sell:
+            cache.set(f'best_{self.commodity_id}', (best_buy, best_sell), timeout=None)
+            self.commodity.best_buy = best_buy
+            self.commodity.best_sell = best_buy
+
+        return modified_buy, modified_sell
 
     @property
     def modified_string(self):

@@ -24,7 +24,6 @@ from tradedangerous.tradedb import Station as TDStation
 from tradedangerous.tradedb import Item as TDItem
 from tradedangerous.tradedb import RareItem as TDIRareItem
 from tradedangerous.tradedb import Category as TDCategory
-
 from EDSite.helpers import SingletonMeta, EDDatabaseState, make_timezone_aware, StationType, difference_percent, \
     display_top_memory, queryset_iterator, chunked_queryset, chunks, chunks_no_overlap, update_item_dict
 try:
@@ -34,11 +33,9 @@ except ImproperlyConfigured:
     import django
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'EDSiteProject.settings')
     django.setup()
-
     from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing, \
         CarrierMission
 from django.core.cache import cache
-
 from EDSite.tools.data_listener import LiveListener
 
 
@@ -399,10 +396,6 @@ class EDData(metaclass=SingletonMeta):
             print("Saving new listings")
             t0 = time.time()
             for chunk in tqdm(list(chunks(new_listings, 200000))):
-                # LiveListing.objects.bulk_update_or_create(
-                #     chunk,
-                #     changeable_attributes + ['commodity_id', 'commodity_tradedangerous_id', 'station_id', 'station_tradedangerous_id', 'from_live'],
-                #     match_field=('commodity_id', 'station_id'))
                 LiveListing.objects.bulk_create(list(chunk))
             print(f"Saving new took {time.time() - t0}")
         db.reset_queries()
@@ -442,13 +435,15 @@ class EDData(metaclass=SingletonMeta):
         live_listing: LiveListing
         for live_listing in tqdm(LiveListing.objects.filter(Q(supply_units__gte=5) | Q(demand_units__gte=100)).iterator(100000)):
             if live_listing.is_recently_modified:
-                if live_listing.is_high_supply() and 0 < live_listing.supply_price and live_listing.is_recently_modified:
-                    if not best_sells[live_listing.commodity_id] or best_sells[live_listing.commodity_id].supply_price > live_listing.supply_price:
+                existing_best_sell = best_sells[live_listing.commodity_id]
+                existing_best_buy = best_buys[live_listing.commodity_id]
+                if live_listing.is_high_supply() and 0 < live_listing.supply_price:
+                    if not existing_best_sell or existing_best_sell.supply_price > live_listing.supply_price:
                         if not live_listing.station.station_type == StationType.FLEET:
                             best_sells[live_listing.commodity_id] = live_listing
 
                 if live_listing.is_high_demand() and live_listing.demand_units > 0 and 0 < live_listing.demand_price:
-                    if not best_buys[live_listing.commodity_id] or live_listing.demand_price > best_buys[live_listing.commodity_id].demand_price:
+                    if not existing_best_buy or live_listing.demand_price > existing_best_buy.demand_price:
                         if not live_listing.station.station_type == StationType.FLEET:
                             best_buys[live_listing.commodity_id] = live_listing
 
