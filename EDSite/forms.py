@@ -146,6 +146,7 @@ class CarrierMissionForm(forms.Form):
             attrs={'class': 'input', 'readonly': True, 'id': 'usernameField'},
         ),
         required=True,
+        disabled=True
     )
     mission_type = forms.ChoiceField(
         required=True,
