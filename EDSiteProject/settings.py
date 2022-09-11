@@ -27,6 +27,8 @@ try:
 except ModuleNotFoundError:
     pass
 
+HISTORIC_DIFFERENCE_DELTA = 5
+
 DATABASE_HOST = os.getenv('DATABASE_HOST')
 
 DATABASE_USER = os.getenv('DATABASE_USER')
@@ -187,7 +189,7 @@ REST_FRAMEWORK = {
 }
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
-CSRF_TRUSTED_ORIGINS = ['https://my-elite-site.herokuapp.com']
+CSRF_TRUSTED_ORIGINS = ['https://my-elite-site.herokuapp.com', 'http://edsite.arthurvanremoortel.me', 'https://edsite.arthurvanremoortel.me']
 
 # LOGGING = { // Database logging
 #     'version': 1,

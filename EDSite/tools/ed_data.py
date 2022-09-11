@@ -26,6 +26,8 @@ from tradedangerous.tradedb import RareItem as TDIRareItem
 from tradedangerous.tradedb import Category as TDCategory
 from EDSite.helpers import SingletonMeta, EDDatabaseState, make_timezone_aware, StationType, difference_percent, \
     display_top_memory, queryset_iterator, chunked_queryset, chunks, chunks_no_overlap, update_item_dict
+from EDSiteProject import settings
+
 try:
     from EDSite.models import System, Station, Commodity, Rare, CommodityCategory, LiveListing, HistoricListing, \
         CarrierMission
@@ -349,8 +351,8 @@ class EDData(metaclass=SingletonMeta):
                         visited_listings.add(existing_live_listing.id)
                         if modified != existing_live_listing.modified:
                             if not station.fleet:
-                                if (difference_percent(existing_live_listing.demand_price, demand_price) > 10
-                                        or difference_percent(existing_live_listing.supply_price, supply_price) > 10):
+                                if (difference_percent(existing_live_listing.demand_price, demand_price) > settings.HISTORIC_DIFFERENCE_DELTA
+                                        or difference_percent(existing_live_listing.supply_price, supply_price) > settings.HISTORIC_DIFFERENCE_DELTA):
                                     new_historic_listings.append(HistoricListing.from_live(existing_live_listing))
                                     total_new_historic_listings += 1
                                 else:

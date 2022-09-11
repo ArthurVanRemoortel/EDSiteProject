@@ -194,8 +194,8 @@ class Station(models.Model):
             if existing_match:
                 # Update an existing listing
                 if not self.fleet:
-                    if (difference_percent(existing_match.demand_price, new_ll.demand_price) > 10
-                            or difference_percent(existing_match.supply_price, new_ll.supply_price) > 10):
+                    if (difference_percent(existing_match.demand_price, new_ll.demand_price) > settings.HISTORIC_DIFFERENCE_DELTA
+                            or difference_percent(existing_match.supply_price, new_ll.supply_price) > settings.HISTORIC_DIFFERENCE_DELTA):
                         new_historic_listings.append(HistoricListing.from_live(existing_match))
 
                 existing_match.demand_price = new_ll.demand_price
