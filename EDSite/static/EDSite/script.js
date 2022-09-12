@@ -49,6 +49,16 @@ function makeSelect2($inputRef, queryUrl, processResults, dataFunction, formatFu
     });
 }
 
-
-
+function createExternalLinkTippy(itemId, templateId, placement='top'){
+    const template = document.getElementById(templateId);
+    tippy('#' + itemId, {
+        interactive: true,
+        allowHTML: true,
+        content: template.innerHTML,
+        delay: [400, 100],
+        animation: 'shift-away',
+        placement: placement,
+        touch: ['hold', 500]
+    });
+}
 

@@ -160,7 +160,7 @@ class EDData(metaclass=SingletonMeta):
         updated_stations: [Station] = []
         systems = {system.tradedangerous_id: system for system in System.objects.all()}
         stations = {station.tradedangerous_id: station for station in Station.objects.all()}
-        deleted_stations_ids = []
+        deleted_stations_ids = set()
         deleted_historic_ids = []
         td_stations = tdb.stationByID
         for td_station_id, td_station in tqdm(td_stations.items()):
@@ -211,12 +211,9 @@ class EDData(metaclass=SingletonMeta):
 
         for station_tradedangerous_id, station in stations.items():
             if station_tradedangerous_id not in td_stations:
-                deleted_stations_ids.append(station.id)
-                # print("Deleting: ", station, station.id, station.tradedangerous_id)
-                # hists = HistoricListing.objects.filter(station_id=station.id).all()
-                # for hist in hists:
-                #     print(hist.id)
-                #     deleted_historic_ids.append(hist.id)
+                print(f'Trying to delete station: {station}')
+                # Don't delete carriers
+                # deleted_stations_ids.add(station.id)
 
         if new_stations:
             Station.objects.bulk_create(new_stations)
@@ -226,7 +223,7 @@ class EDData(metaclass=SingletonMeta):
             # hist = HistoricListing.objects.filter(station_id__in=deleted_stations_ids).all()
             with transaction.atomic():
                 for station_id in deleted_historic_ids:
-                    print(f"Deleting station: {station_id}")
+                    print(f"Station no longer in tradedangerous database: {station_id}")
                     Station.objects.filter(pk=station_id).delete()
             # print("Hist ids =", len(deleted_historic_ids))
             # if deleted_historic_ids:
@@ -323,7 +320,6 @@ class EDData(metaclass=SingletonMeta):
                 td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
             else:
                 td_row_part = list(tdb.cur.execute('SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, item_id', [min_station_td_id, max_station_td_id]))
-
 
             existing_live_listings = {(ll.station_id, ll.commodity_id): ll for ll in LiveListing.objects.filter(Q(station_tradedangerous_id__gte=min_station_td_id) & Q(station_tradedangerous_id__lte=max_station_td_id)).all()}  # Problem
             db.reset_queries()

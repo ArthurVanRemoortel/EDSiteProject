@@ -7867,6 +7867,9 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
   min-height: 100vh;
   flex-direction: column; }
 
+.commodity_th {
+  width: 30%; }
+
 .select2-container .select2-selection {
   background-color: #343A40 !important;
   transition: border-color 86ms;
@@ -7922,5 +7925,21 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
   .select2-container .select2-dropdown .select2-results__option--selected {
     color: #EEEEEE;
     background-color: #b83300; }
+
+.tippy-box {
+  background-color: #222831;
+  color: #EEEEEE; }
+
+.tippy-arrow {
+  color: #222831; }
+
+.tippy_link {
+  background-color: transparent;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover;
+  background-position: center;
+  border-color: transparent; }
+  .tippy_link:hover {
+    border-color: transparent; }
 
 /*# sourceMappingURL=bulma.css.map */

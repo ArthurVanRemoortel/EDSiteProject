@@ -1,6 +1,7 @@
 {% extends 'EDSite/base.html'%}
+{% load extras %}
 {% block title %}
-    Station - {{ station.name }}
+    {{ station.name }}
 {% endblock %}
 
 {% block content %}
@@ -25,11 +26,16 @@
                 <li class="is-active"> <a href="#">{{ station.name }}</a></li>
             </ul>
         </nav>
+
         <h2 class="title is-2 is-spaced bd-anchor-title">
-            {{ station.name }}
-            <a class="subtitle is-3 thin" href="/systems/{{ station.system.id }}">
+            <a class="title is-2" id="openExternalStationButton">
+                {{ station.name }}
+            </a>
+            <a class="subtitle is-3 thin" href="/systems/{{ station.system.id }}" id="openExternalSystemButton">
                 {{ station.system.name }}
             </a>
+            {% open_external 'openExternalStationButton' station 'top' %}
+            {% open_external 'openExternalSystemButton' station.system 'top' %}
         </h2>
         <article class="panel is-info">
             <div class="tabs panel-heading is-boxed">
