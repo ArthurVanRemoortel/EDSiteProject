@@ -234,7 +234,7 @@
         function setListing(){
             {#console.log("SET LISTING: ", listing)#}
             if (!listing) {
-                $listingField.val(null).trigger('change');
+                $listingField.val(null)
                 return
             }
             let listing_test = "Unknown"
@@ -288,14 +288,16 @@
                     'units': 1000
                 },
                 success: function (data) {
-                    console.log("tryGetListing:", data)
+                    {#console.log("tryGetListing:", data.results)#}
                     const bestListings = data.results[0]
                     if (bestListings){
                         listing = bestListings
                         station = bestListings.station
-                        setListing()
-                        calculatePriceAndTotal()
+                    } else {
+                        listing = null
                     }
+                    setListing()
+                    calculatePriceAndTotal()
                 },
             });
         }
@@ -327,12 +329,12 @@
             tryGuessStation()
         });
 
-        $workerProfitField.change(function() {
-            tryGuessStation()
+        $workerProfitField.keyup(function() {
+            calculatePriceAndTotal()
         });
 
-        $unitsField.change(function() {
-            tryGuessStation()
+        $unitsField.keyup(function() {
+            calculatePriceAndTotal()
         });
 
         $carrierCodeField.select2({

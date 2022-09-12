@@ -29,9 +29,8 @@ class ListingsViewSet(viewsets.ModelViewSet):
         commodity_id = self.request.query_params.get('commodity')
         station_id = self.request.query_params.get('station')
         system_id = self.request.query_params.get('system__station')
-        # sort = self.request.query_params.get('sort')
         type = self.request.query_params.get('type')  # Supply or demand.
-        units = self.request.query_params.get('units')  # Supply or demand.
+        units = self.request.query_params.get('units')
         if station_id:
             qs = qs.filter(Q(station_id=station_id))
         if commodity_id:
