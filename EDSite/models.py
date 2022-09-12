@@ -20,7 +20,11 @@ class CommodityCategory(models.Model):
 
     @property
     def sorted_commodities(self):
-        return self.commodities.all().order_by('name')
+        return self.commodities.order_by('name')
+
+    @property
+    def sorted_profit_commodities(self):
+        return sorted(list(self.commodities.all()), key=lambda c: c.max_profit, reverse=True)
 
     def __str__(self):
         return self.name

@@ -1,8 +1,7 @@
-<!DOCTYPE html>
-<html lang="en">
 {% extends 'EDSite/base.html'%}
+{% load extras %}
 {% block title %}
-    System - {{ station.name }}
+    {{ system.name }}
 {% endblock %}
 
 {% block content %}
@@ -27,8 +26,12 @@
             </ul>
         </nav>
         <h2 class="title is-2 is-spaced bd-anchor-title">
-            {{ system.name }}
+            <a class="title is-2" id="openExternalSystemButton">
+                {{ system.name }}
+            </a>
+            {% open_external 'openExternalSystemButton' system 'top' %}
         </h2>
+
         <article class="panel is-info">
             <div class="tabs panel-heading is-boxed">
                 <ul>

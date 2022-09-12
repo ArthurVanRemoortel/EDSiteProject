@@ -1,7 +1,7 @@
 {% extends 'EDSite/base.html'%}
 {% load extras %}
 {% block title %}
-    Commodity - {{ commodity.name }}
+    {{ commodity.name }}
 {% endblock %}
 
 {% block content %}
@@ -26,10 +26,13 @@
             </ul>
         </nav>
         <h2 class="title is-2 is-spaced bd-anchor-title">
-            {{ commodity.name }}
+            <a class="title is-2" id="openExternalCommodityButton">
+                {{ commodity.name }}
+            </a>
             <span class="subtitle is-3 thin">
                 {{ commodity.category.name }}
             </span>
+            {% open_external 'openExternalCommodityButton' commodity 'top' %}
         </h2>
         <article class="panel is-info">
             <p class="panel-heading">

@@ -26,7 +26,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                {% for commodity in category.sorted_commodities %}
+                {% for commodity in category.sorted_profit_commodities %}
                     <tr>
                         <th> <a href="/commodities/{{ commodity.id }}">{{ commodity.name }}</a> </th>
                             <td style="text-align: right">

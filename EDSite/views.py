@@ -348,13 +348,13 @@ def debug_update_database(request, mode='False'):
 
     print(f"Updating local database ({mode})...")
     def f():
-        EDData().update_local_database(data=update_all or quick,
+        EDData().update_local_database(data=update_all,
                                        update_stations=update_all or quick,
                                        update_systems=update_all or quick,
                                        update_commodities=update_all or quick,
-                                       update_listings=update_all or listings or quick,
-                                       update_cache=update_all or listings or cache or quick,
-                                       full_listings_update=not quick,
+                                       update_listings=update_all or listings,
+                                       update_cache=update_all or listings or cache,
+                                       full_listings_update=True,
                                        )
     threading.Thread(target=f).start()
 

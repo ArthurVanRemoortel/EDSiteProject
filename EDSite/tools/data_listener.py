@@ -222,7 +222,7 @@ class LiveListener:
                         if system:
                             station.system_id = system.id
                             to_update_stations[station.id] = station
-                            print(f'Changed the station {station} to system {system}')
+                            # print(f'Changed the station {station} to system {system}')
                         else:
                             pass
                             # TODO: New systems not in db yet.

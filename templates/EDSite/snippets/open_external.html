@@ -1,0 +1,33 @@
+{% load static %}
+{% load extras %}
+{#<a class="" id="{{ trigger_id }}">#}
+{#    <span class="icon is-large">#}
+{#        <i class="fa-solid fa-arrow-up-right-from-square"></i>#}
+{#    </span>#}
+{#</a>#}
+
+<div id="template-{{ trigger_id }}" style="display: none;">
+    <div class="buttons">
+        {% with inara_url=object|external_url:'inara' %}
+            {% if inara_url %}
+                <a href="{{ inara_url }}" class="button tippy_link" target="_blank"
+                   style="background-image: url('{% static 'EDSite/images/inara_logo.webp' %}'); width: 40px">
+                </a>
+            {% endif %}
+
+        {% endwith %}
+        {% with eddb_url=object|external_url:'eddb' %}
+            {% if eddb_url %}
+                <a href="{{ eddb_url }}" class="button tippy_link" target="_blank"
+                   style="background-image: url('{% static 'EDSite/images/eddb_full.webp' %}'); width: 100px">
+                </a>
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
+
+{% block javascript %}
+    <script>
+        createExternalLinkTippy("{{ trigger_id }}", "template-{{ trigger_id }}", "{{ placement }}")
+    </script>
+{% endblock javascript %}
