@@ -177,9 +177,9 @@ class Station(models.Model):
         if not self.modified:
             return "Unknown"
         age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
-        if age_delta.seconds < 3600:
+        if age_delta < datetime.timedelta(seconds=3600):
             return f"{int(age_delta.seconds / 60)} minutes"
-        elif age_delta.days < 1:
+        elif age_delta < datetime.timedelta(days=1):
             return f"{int(age_delta.seconds / 3600)} hours"
         else:
             return f"{age_delta.days} days"
@@ -324,9 +324,9 @@ class LiveListing(models.Model):
     @property
     def modified_string(self):
         age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
-        if age_delta.seconds < 3600:
+        if age_delta < datetime.timedelta(seconds=3600):
             return f"{int(age_delta.seconds / 60)} minutes"
-        elif age_delta.days < 1:
+        elif age_delta < datetime.timedelta(days=1):
             return f"{int(age_delta.seconds / 3600)} hours"
         else:
             return f"{age_delta.days} days"
