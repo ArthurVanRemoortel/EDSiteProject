@@ -84,14 +84,14 @@ def systems(request):
 
     context['systems'] = filtered_systems
     context['form'] = form
-    return render(request, 'EDSite/systems.html', base_context(request) | context)
+    return render(request, 'EDSite/system/systems.html', base_context(request) | context)
 
 
 def system(request, system_id):
     context = {
         'system': System.objects.get(pk=system_id),
     }
-    return render(request, 'EDSite/system.html', base_context(request) | context)
+    return render(request, 'EDSite/system/system.html', base_context(request) | context)
 
 
 def stations(request):
@@ -150,7 +150,7 @@ def stations(request):
 
     context['stations'] = filtered_stations
     context['form'] = form
-    return render(request, 'EDSite/stations.html', base_context(request) | context)
+    return render(request, 'EDSite/station/stations.html', base_context(request) | context)
 
 
 def station(request, station_id):
@@ -164,14 +164,14 @@ def station(request, station_id):
         'station': station,
         'listings_by_category': listings_by_category
     }
-    return render(request, 'EDSite/station.html', base_context(request) | context)
+    return render(request, 'EDSite/station/station.html', base_context(request) | context)
 
 
 def commodities(request):
     context = {
         'categories': CommodityCategory.objects.all(),
     }
-    return render(request, 'EDSite/commodities.html', base_context(request) | context)
+    return render(request, 'EDSite/commodity/commodities.html', base_context(request) | context)
 
 
 def commodity(request, commodity_id):
@@ -240,12 +240,12 @@ def commodity(request, commodity_id):
     context['commodity'] = commodity
     context['listings'] = list(filtered_listings)
     context['form'] = form
-    return render(request, 'EDSite/commodity.html', base_context(request) | context)
+    return render(request, 'EDSite/commodity/commodity.html', base_context(request) | context)
 
 
 def rares(request):
     context = {}
-    return render(request, 'EDSite/rares.html', base_context(request) | context)
+    return render(request, 'EDSite/commodity/rares.html', base_context(request) | context)
 
 
 def carrier_planner(request):
