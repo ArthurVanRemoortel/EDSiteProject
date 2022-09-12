@@ -30,7 +30,8 @@
 
 <nav class="navbar navbar-expand-lg">
     <div class="navbar-brand">
-        <a class="navbar-item" href="/">
+        <a class="navbar-item " href="{% url 'index' %}">
+            <p class="title is-3 thin pt-1 is-primary-text-color">Home</p>
             {#            <img src="https://bulma.io/images/bulma-logo.png" width="112" height="28">#}
         </a>
 
@@ -43,45 +44,64 @@
 
     <div id="navbarBasicExample" class="navbar-menu">
         <div class="navbar-start">
-            <a class="navbar-item" href="/">
-                Home
+
+            <a class="navbar-item" href="{% url 'systems' %}">
+                Systems
             </a>
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    Data
-                </a>
 
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" href="{% url 'systems' %}">
-                        Systems
-                    </a>
-                    <a class="navbar-item" href="{% url 'stations' %}">
-                        Stations
-                    </a>
-                    <hr class="navbar-divider">
-                    <a class="navbar-item" href="{% url 'commodities' %}">
-                        Commodities
-                    </a>
-                    <a class="navbar-item" href="{% url 'rares' %}">
-                        Rare Items
-                    </a>
-                </div>
-            </div>
+            <a class="navbar-item" href="{% url 'stations' %}">
+                Stations
+            </a>
 
-            <div class="navbar-item has-dropdown is-hoverable">
-                <a class="navbar-link">
-                    Trade
-                </a>
+            <a class="navbar-item" href="{% url 'commodities' %}">
+                Commodities
+            </a>
 
-                <div class="navbar-dropdown">
-                    <a class="navbar-item" href="#">
-                        Trade Routes
-                    </a>
-                    <a class="navbar-item" href="{% url 'carrier-missions' tab='all' %}">
-                        Carrier Missions
-                    </a>
-                </div>
-            </div>
+            <a class="navbar-item" href="#">
+                Trade Routes
+            </a>
+            <a class="navbar-item" href="{% url 'carrier-missions' tab='all' %}">
+                Carrier Missions
+            </a>
+
+
+{#            <div class="navbar-item has-dropdown is-hoverable">#}
+{#                <a class="navbar-link">#}
+{#                    Data#}
+{#                </a>#}
+{##}
+{#                <div class="navbar-dropdown">#}
+{#                    <a class="navbar-item" href="{% url 'systems' %}">#}
+{#                        Systems#}
+{#                    </a>#}
+{#                    <a class="navbar-item" href="{% url 'stations' %}">#}
+{#                        Stations#}
+{#                    </a>#}
+{#                    <hr class="navbar-divider">#}
+{#                    <a class="navbar-item" href="{% url 'commodities' %}">#}
+{#                        Commodities#}
+{#                    </a>#}
+{#                    <a class="navbar-item" href="{% url 'rares' %}">#}
+{#                        Rare Items#}
+{#                    </a>#}
+{#                </div>#}
+{#            </div>#}
+{##}
+{#            <div class="navbar-item has-dropdown is-hoverable">#}
+{#                <a class="navbar-link">#}
+{#                    Trade#}
+{#                </a>#}
+{##}
+{#                <div class="navbar-dropdown">#}
+{#                    <a class="navbar-item" href="#">#}
+{#                        Trade Routes#}
+{#                    </a>#}
+{#                    <a class="navbar-item" href="{% url 'carrier-missions' tab='all' %}">#}
+{#                        Carrier Missions#}
+{#                    </a>#}
+{#                </div>#}
+{#            </div>#}
+
         </div>
         <div class="navbar-end">
             {% if DEBUG_MODE %}
@@ -141,7 +161,7 @@
         {% endblock %}
     </div>
 
-    <footer class="footer column is-narrow box mt-6">
+    <footer class="footer column is-narrow mt-6">
         <div class="content has-text-centered">
             <p>
                 <strong> <a href="https://www.elitedangerous.com/">Elite: Dangerous</a></strong> game tools by <strong><a href="https://github.com/ArthurVanRemoortel">Arthur Van Remoortel <i class="fa-brands fa-github"></i></a></strong>

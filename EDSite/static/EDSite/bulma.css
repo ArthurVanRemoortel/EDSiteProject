@@ -7839,7 +7839,11 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
   color: #EEEEEE; }
 
 .is-primary-text-color {
-  color: #FF7844; }
+  color: #FF7844 !important; }
+
+.footer {
+  background-color: #222831;
+  color: #EEEEEE; }
 
 .unit {
   color: #FF7844; }
