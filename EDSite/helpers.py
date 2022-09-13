@@ -46,6 +46,15 @@ def difference_percent(a, b):
     return (abs(a - b) / b) * 100.0
 
 
+def is_listing_better_than(first: 'LiveListing', second: 'LiveListing', mode: str) -> bool:
+    if mode == "supply":
+        return first.supply_price <= second.supply_price
+    elif mode == "demand":
+        return first.demand_price >= second.demand_price
+    else:
+        return False
+
+
 def make_timezone_aware(dt: datetime.datetime) -> datetime.datetime:
     return dt.replace(tzinfo=datetime.timezone.utc)
 

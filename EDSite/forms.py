@@ -23,7 +23,7 @@ class ChoiceFieldNoValidation(forms.ChoiceField):
 
 
 class CommodityForm(forms.Form):
-    reference_system = forms.ChoiceField(
+    reference_system = ChoiceFieldNoValidation(
         widget=forms.Select(
             attrs={'class': 'input', 'id': 'referenceInput'}
         ),

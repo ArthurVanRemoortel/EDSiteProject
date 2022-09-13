@@ -186,7 +186,7 @@ class LiveListener:
             if len(to_update_stations.keys()) > 0:
                 with transaction.atomic():
                     for station in to_update_stations.values():
-                        Station.objects.filter(id=station.id).update(system_id=station.system_id, modified=station.modified)
+                        Station.objects.select_for_update().filter(id=station.id).update(system_id=station.system_id, modified=station.modified)
                 to_update_stations = {}
 
             try:

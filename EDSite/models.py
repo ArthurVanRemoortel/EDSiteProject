@@ -1,16 +1,14 @@
-import random
-
 from django.db import models
 from django.db.models import Q
-from EDSite.helpers import StationType, difference_percent
+from EDSite.helpers import StationType, difference_percent, is_listing_better_than
 from django.core.cache import cache
 import datetime
 from django.conf import settings
-from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 from django.db import transaction
 from pprint import pprint
 from django.forms.models import model_to_dict
-
+from django.utils import timezone
+import time
 IS_LIVE_MINUTES = 60
 
 
@@ -38,12 +36,13 @@ class Commodity(models.Model):
     game_id = models.IntegerField(unique=True, db_index=True)
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
 
-    best_buy = None
-    best_sell = None
+    _best_buy = None
+    _best_sell = None
+    _best_buy_historic = None
+    _best_sell_historic = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.update_best_listings()
 
     class Meta:
         ordering = ['-id']
@@ -52,6 +51,7 @@ class Commodity(models.Model):
     def fullname(self):
         return f'{self.category} - {self.name}'
 
+    @property
     def average_buy(self):
         return self.average_price
 
@@ -62,15 +62,55 @@ class Commodity(models.Model):
             return 0
         return buy.demand_price - sell.supply_price
 
-    def update_best_listings(self) -> ('LiveListing', 'LiveListing'):
-        try:
-            self.best_buy, self.best_sell = cache.get(f'best_{self.id}')
-        except TypeError:
-            self.best_buy, self.best_sell = (None, None)
+    @property
+    def max_profit_historic(self):
+        buy, sell = self.best_listings_historic
+        if not buy or not sell:
+            return 0
+        return buy.demand_price - sell.supply_price
+
+    @property
+    def best_buy(self):
+        return self.best_listings[0]
+
+    @property
+    def best_sell(self):
+        return self.best_listings[1]
 
     @property
     def best_listings(self) -> ('LiveListing', 'LiveListing'):
-        return self.best_buy, self.best_sell
+        if not self._best_buy or self._best_sell:
+            try:
+                self._best_buy, self._best_sell = cache.get(f'best_{self.id}')
+            except TypeError:
+                self._best_buy, self._best_sell = (None, None)
+        return self._best_buy, self._best_sell
+
+    @property
+    def best_listings_historic(self):
+        if not self._best_buy_historic or self._best_sell_historic:
+            try:
+                self._best_buy_historic, self._best_sell_historic = cache.get(f'best_historic_{self.id}')
+            except TypeError:
+                self._best_buy_historic, self._best_sell_historic = self.find_best_listings_historic(datetime.timedelta(days=14))
+        return self._best_buy_historic, self._best_sell_historic
+
+    def find_best_listings_historic(self, timespan: datetime.timedelta = datetime.timedelta(days=14)):
+        print(f"Calculating historic_listings for {self.id}")
+        # TODO: Cache these results?
+        historic_listings = list(HistoricListing.objects.filter(Q(commodity_id=self.id) & Q(datetime__gte=timezone.now()-timespan)))
+        if self.best_buy:
+            historic_listings.append(self.best_buy)
+        if self.best_sell:
+            historic_listings.append(self.best_sell)
+        best_sell_filtered = list(filter(lambda hs: hs.is_high_supply() and hs.supply_price > 0, historic_listings))
+        best_but_filtered = list(filter(lambda hs: hs.is_high_demand() and hs.demand_price > 0, historic_listings))
+        if best_sell_filtered:
+            self._best_sell_historic = min(best_sell_filtered, key=lambda hs: hs.supply_price)
+        if best_but_filtered:
+            self._best_buy_historic = max(best_but_filtered, key=lambda hs: hs.demand_price)
+        cache.set(f'best_historic_{self.id}', (self._best_buy_historic, self._best_sell_historic), timeout=3600 * settings.HISTORIC_CACHE_TIMEOUT_HOURS)
+        return self._best_buy_historic, self._best_sell_historic
 
     def __str__(self):
         return f'{self.fullname}'
@@ -213,6 +253,7 @@ class Station(models.Model):
                 # It's a new listing.
                 new_listings.append(new_ll)
 
+
         if updated_listings:
             # print("Updating:", len(updated_listings))
             with transaction.atomic():
@@ -267,13 +308,13 @@ class LiveListing(models.Model):
     def is_high_demand(self, minimum=200):
         return self.demand_units > minimum
 
-    def is_better_than(self, other: 'LiveListing', mode: str) -> bool:
-        if mode == "supply":
-            return self.supply_price <= other.supply_price
-        elif mode == "demand":
-            return self.demand_price >= other.demand_price
-        else:
-            return False
+    # def is_better_than(self, other: 'LiveListing', mode: str) -> bool:
+    #     if mode == "supply":
+    #         return self.supply_price <= other.supply_price
+    #     elif mode == "demand":
+    #         return self.demand_price >= other.demand_price
+    #     else:
+    #         return False
 
     def cache_if_better(self) -> (bool, bool):
         """
@@ -293,8 +334,8 @@ class LiveListing(models.Model):
             if original_best_buy and self.station_id == original_best_buy.station_id:
                 best_buy = self
                 modified_buy = True
-            elif self.is_high_demand() and self.demand_units > 0 and self.demand_price > 0:
-                if not best_buy or self.is_better_than(best_buy, 'demand'):
+            elif self.is_high_demand() and self.demand_price > 0:
+                if not best_buy or is_listing_better_than(self, best_buy, 'demand'):
                     best_buy = self
                     modified_buy = True
 
@@ -302,7 +343,7 @@ class LiveListing(models.Model):
                 best_sell = self
                 modified_sell = True
             elif self.is_high_supply() and self.supply_price > 0:
-                if not best_sell or self.is_better_than(best_sell, 'supply'):
+                if not best_sell or is_listing_better_than(self, best_sell, 'supply'):
                     best_sell = self
                     modified_sell = True
 
@@ -316,8 +357,15 @@ class LiveListing(models.Model):
                 best_buy = original_best_sell
         if modified_buy or modified_sell:
             cache.set(f'best_{self.commodity_id}', (best_buy, best_sell), timeout=None)
-            self.commodity.best_buy = best_buy
-            self.commodity.best_sell = best_buy
+            if (best_buy and original_best_buy.station_id != best_buy.station_id) or \
+                    (best_sell and original_best_sell.station_id != best_sell.station_id) or \
+                    (best_buy and original_best_buy.demand_price != best_buy.demand_price) or \
+                    (best_sell and original_best_sell.supply_price != best_sell.supply_price):
+                # Only recalculate historic cache if something actually changed.
+                self.commodity.find_best_listings_historic()
+
+            self.commodity._best_buy = best_buy
+            self.commodity._best_sell = best_buy
 
         return modified_buy, modified_sell
 
@@ -349,6 +397,12 @@ class HistoricListing(models.Model):
             ("commodity_id", "station_id"),
         ]
 
+    def is_high_supply(self, minimum=5000):
+        return self.supply_units > minimum
+
+    def is_high_demand(self, minimum=200):
+        return self.demand_units > minimum
+
     @classmethod
     def from_live(cls, live_listing: LiveListing):
         return cls(
@@ -360,6 +414,19 @@ class HistoricListing(models.Model):
             supply_units=live_listing.supply_units,
             datetime=live_listing.modified,
         )
+
+    @property
+    def modified_string(self):
+        age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.datetime
+        if age_delta < datetime.timedelta(seconds=3600):
+            return f"{int(age_delta.seconds / 60)} minutes"
+        elif age_delta < datetime.timedelta(days=1):
+            return f"{int(age_delta.seconds / 3600)} hours"
+        else:
+            return f"{age_delta.days} days"
+
+    def __str__(self):
+        return f'{self.commodity.name} on {self.datetime} @ {self.station.fullname} ({self.station.id}) S:{self.supply_units}@{self.supply_price} and B:{self.demand_units}@{self.demand_price}'
 
 
 class CarrierMission(models.Model):

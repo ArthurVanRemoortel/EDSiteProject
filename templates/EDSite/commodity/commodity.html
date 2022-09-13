@@ -44,16 +44,18 @@
                     <p class="mt-2">Maximum Buy</p>
                     <p class="mt-2">Minimum Sell</p>
                     <p class="mt-2">Maximum Profit</p>
+                    <p class="mt-2">Recent Profit</p>
                 </div>
                 <div class="column column_fixed_10">
                     <p class="mt-2">{{ commodity.average_buy }} <span class="unit">CR</span> </p>
                     <p class="mt-2">{{ commodity.best_buy.demand_price }} <span class="unit">CR</span></p>
                     <p class="mt-2">{{ commodity.best_sell.supply_price }} <span class="unit">CR</span></p>
                     <p class="mt-2">{{ commodity.max_profit }} <span class="unit">CR</span></p>
+                    <p class="mt-2">{{ commodity.max_profit_historic }} <span class="unit">CR</span></p>
                 </div>
                 <div class="column">
                     <br class="mt-2">
-                    <p class="mt-2">
+                    <p class="mt-1">
                         {% with station_type=commodity.best_buy.station.station_type.name %}
                             {% include 'EDSite/snippets/station_type.html' %}
                         {% endwith %}
@@ -70,6 +72,16 @@
                         <a href="/systems/{{ commodity.best_sell.station.system.id }}">{{ commodity.best_sell.station.system.name }}</a>
                     </p>
                     <br class="mt-2">
+                    <p class="mt-2">
+                        {% with profit_historic=commodity.max_profit_historic %}
+                            {% if profit_historic %}
+                                {{ profit_historic }}
+                                <span class="unit ml-1">
+                                        CR
+                                </span>
+                            {% endif %}
+                        {% endwith %}
+                    </p>
                 </div>
             </div>
         </article>

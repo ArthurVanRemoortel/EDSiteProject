@@ -169,7 +169,9 @@ def station(request, station_id):
 
 def commodities(request):
     context = {
-        'categories': CommodityCategory.objects.all(),
+        'categories': sorted(CommodityCategory.objects.all(),
+                             key=lambda category: max(category.commodities.all(), key=lambda com: com.max_profit).max_profit,
+                             reverse=True)
     }
     return render(request, 'EDSite/commodity/commodities.html', base_context(request) | context)
 
@@ -224,7 +226,7 @@ def commodity(request, commodity_id):
                 filtered_listings = filtered_listings.filter(Q(station__pad_size='L'))
             ordering = '-demand_price' if buy_or_sell == 'sell' else 'supply_price'
         else:
-            print("Carrier mission form was not valid:", form.errors)
+            print("Commodity mission form was not valid:", form.errors)
 
     filtered_listings = filtered_listings.order_by(ordering)  # TODO: Performance. This makes it slow.
     filtered_listings = filtered_listings[:40]
