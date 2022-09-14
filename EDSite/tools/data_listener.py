@@ -212,6 +212,8 @@ class LiveListener:
             commodities = entry.commodities
             if not commodities:
                 continue
+            if station_name == "K7Q-BQL":
+                print("RECEIVED: ", station_name, system_name)
             station: Station = self.ed_data.station_names_dict.get((station_name, system_name))
             if not station and len(station_name) == 7 and station_name[3] == '-':
                 # print("Looking for station ignoring system")

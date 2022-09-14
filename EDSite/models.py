@@ -78,6 +78,14 @@ class Commodity(models.Model):
         return self.best_listings[1]
 
     @property
+    def best_buy_historic(self):
+        return self.best_listings_historic[0]
+
+    @property
+    def best_sell_historic(self):
+        return self.best_listings_historic[1]
+
+    @property
     def best_listings(self) -> ('LiveListing', 'LiveListing'):
         if not self._best_buy or self._best_sell:
             try:
@@ -213,7 +221,7 @@ class Station(models.Model):
         return self.listings.filter(Q(demand_units__gt=0))
 
     @property
-    def modified_string(self):
+    def age_string(self):
         if not self.modified:
             return "Unknown"
         age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
@@ -370,7 +378,7 @@ class LiveListing(models.Model):
         return modified_buy, modified_sell
 
     @property
-    def modified_string(self):
+    def age_string(self):
         age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
         if age_delta < datetime.timedelta(seconds=3600):
             return f"{int(age_delta.seconds / 60)} minutes"
@@ -416,7 +424,7 @@ class HistoricListing(models.Model):
         )
 
     @property
-    def modified_string(self):
+    def age_string(self):
         age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.datetime
         if age_delta < datetime.timedelta(seconds=3600):
             return f"{int(age_delta.seconds / 60)} minutes"

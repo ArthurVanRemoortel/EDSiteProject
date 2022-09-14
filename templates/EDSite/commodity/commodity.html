@@ -75,10 +75,43 @@
                     <p class="mt-2">
                         {% with profit_historic=commodity.max_profit_historic %}
                             {% if profit_historic %}
-                                {{ profit_historic }}
-                                <span class="unit ml-1">
-                                        CR
-                                </span>
+                                <p>
+                                    <span>
+                                        {% with station_type=commodity.best_sell_historic.station.station_type.name %}
+                                            {% include 'EDSite/snippets/station_type.html' %}
+                                        {% endwith %}
+                                        <a href="/stations/{{ commodity.best_sell_historic.station.id }}">{{ commodity.best_sell_historic.station.name }}</a>
+                                    </span>
+                                    at
+                                    <span>
+                                        {{ commodity.best_sell_historic.supply_price }}
+                                        <span class="unit ml-1 mr-2">
+                                            CR
+                                        </span>
+                                        ({{ commodity.best_sell_historic.age_string }})
+                                    </span>
+                                    <span class="icon is-small ml-4 mr-4">
+                                        <i class="fa-solid fa-arrow-right-long"></i>
+                                    </span>
+                                    <span>
+                                        {% with station_type=commodity.best_buy_historic.station.station_type.name %}
+                                            {% include 'EDSite/snippets/station_type.html' %}
+                                        {% endwith %}
+                                        <a href="/stations/{{ commodity.best_buy_historic.station.id }}">{{ commodity.best_buy_historic.station.name }}</a>
+                                    </span>
+                                    at
+                                    <span>
+                                        {{ commodity.best_buy_historic.demand_price }}
+                                        <span class="unit ml-1 mr-2">
+                                            CR
+                                        </span>
+                                        ({{ commodity.best_buy_historic.age_string }})
+                                    </span>
+                                </p>
+                                {#                                {{ profit_historic }}#}
+                                {#                                <span class="unit ml-1">#}
+                                {#                                    CR#}
+                                {#                                </span>#}
                             {% endif %}
                         {% endwith %}
                     </p>
@@ -230,7 +263,7 @@
                             {% endif %}
 
                             <th> {{ listing.station.pad_size }} </th>
-                            <th> {{ listing.modified_string }} </th>
+                            <th> {{ listing.age_string }} </th>
                             <th> {{ listing.station.ls_from_star }} <span class="unit">Ls</span></th>
                             {% if reference_distances %}
                                 <th> {{ reference_distances|get_value:listing.id }} <span class="unit">Ly</span></th>
