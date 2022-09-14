@@ -258,11 +258,12 @@ class Station(models.Model):
             # print("Updating:", len(updated_listings))
             with transaction.atomic():
                 for updated_ll in updated_listings:
-                    e = LiveListing.objects.select_for_update().filter(id=updated_ll.id)
-                    e.update(
-                        **{key: value for key, value in model_to_dict(updated_ll).items() if
-                           key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
-                                   'from_live']})
+                    updated_ll.save()
+                    # e = LiveListing.objects.select_for_update().filter(id=updated_ll.id)
+                    # e.update(
+                    #     **{key: value for key, value in model_to_dict(updated_ll).items() if
+                    #        key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
+                    #                'from_live']})
 
         if updated_listings:
             LiveListing.objects.filter(Q(station_tradedangerous_id=self.tradedangerous_id) & ~Q(pk__in=[ll.id for ll in updated_listings])).delete()
