@@ -4,8 +4,10 @@
     {{ station.name }}
 {% endblock %}
 
-{% block content %}
 
+
+
+{% block content %}
     <div class="container" style="padding-top: 1em">
         <nav class="breadcrumb" aria-label="breadcrumbs">
             <ul>
@@ -29,7 +31,11 @@
 
         <h2 class="title is-2 is-spaced bd-anchor-title">
             <a class="title is-2" id="openExternalStationButton">
-                {{ station.name }}
+
+                {% with station_type=station.station_type.name %}
+                    {% include 'EDSite/snippets/station_type.html' %}
+                {% endwith %}
+                <span class="ml-2">{{ station.name }}</span>
             </a>
             <a class="subtitle is-3 thin" href="/systems/{{ station.system.id }}" id="openExternalSystemButton">
                 {{ station.system.name }}
@@ -38,34 +44,88 @@
             {% open_external 'openExternalSystemButton' station.system 'top' %}
         </h2>
         <article class="panel is-info">
-            <div class="tabs panel-heading is-boxed">
+            <div class="tabs panel-heading is-boxed mb-1">
                 <ul>
-                    <li class="is-active">
-                        <a>
+                    <li class="is-active" id="overviewTabButton">
+                        <a onclick='return showOverviewTab()'>
                             <span class="icon is-small"><i class="fas fa-circle-info" aria-hidden="true"></i></span>
                             <span>Overview</span>
                         </a>
                     </li>
-                    <li>
-                        <a>
+                    <li id="outfittingTabButton">
+                        <a onclick='return showOutfittingTab()'>
                             <span class="icon is-small"><i class="fas fa-shuttle-space" aria-hidden="true"></i></span>
                             <span>Outfitting</span>
                         </a>
                     </li>
-                    <li>
-                        <a>
+                    <li id="factionsTabButton">
+                        <a onclick='return showFactionsTab()'>
                             <span class="icon is-small"><i class="fa-solid fa-people-group" aria-hidden="true"></i></span>
                             <span>Factions</span>
                         </a>
                     </li>
                 </ul>
             </div>
-            <div class="panel-block columns">
-                <div class="column column_fixed_10">
+            <div class="panel-block" id="summaryPanelBlock">
+                <div class="container mb-2" id="overviewTab">
+                    <div class="columns">
+                        <div class="column is-two-thirds">
+                            <div class="columns">
+                                <div class="column column-fixed-10">
+                                    <p class="mt-2">Updated</p>
+                                    <p class="mt-2">System</p>
+                                    <p class="mt-2">Pad Size</p>
+                                    <p class="mt-2">Star Distance</p>
+                                    <p class="mt-2">Your Distance</p>
+                                    <p class="mt-2">Services</p>
+                                </div>
+                                <div class="column">
+                                    <p class="mt-2">{{ station.age_string }}</p>
+                                    <p class="mt-2"><a href="/systems/{{ station.system.id }}">{{ station.system.name }}</a></p>
+                                    <p class="mt-2">{{ station.pad_size }}</p>
+                                    <p class="mt-2">{{ station.ls_from_star }} <span class="unit">Ls</span></p>
+                                    <p class="mt-2">{{ station.system|distance_to:current_system }} <span class="unit">Ly</span></p>
+                                    <p class="mt-2">
+                                        <span class="is-green-text-color">{{ station.enabled_services|join:", " }}</span>
+                                        <br>
+                                        <span class="is-red-text-color">{{ station.disabled_services|join:", " }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="columns">
+                                <div class="column column-fixed-10 has-text-right">
+                                    <p class="mt-2">Economy</p>
+                                    <p class="mt-2">Population</p>
+                                    <p class="mt-2">Government</p>
+                                    <p class="mt-2">Allegiance</p>
+                                    <p class="mt-2">Minor faction</p>
+                                    <p class="mt-2">States</p>
+                                </div>
+                                <div class="column">
+                                    <p class="mt-2">/</p>
+                                    <p class="mt-2">/</p>
+                                    <p class="mt-2">/</p>
+                                    <p class="mt-2">/</p>
+                                    <p class="mt-2">/</p>
+                                    <div class="buttons mt-2">
+                                      <button class="button is-primary is-small is-rounded" >Placeholder</button>
+                                      <button class="button is-primary is-small is-rounded">Placeholder</button>
+                                      <button class="button is-primary is-small is-rounded">Placeholder</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="column column_fixed_10">
+                <div class="container  mb-2" id="outfittingTab">
+                    <div class="">
+                    </div>
                 </div>
-                <div class="column column_fixed_10">
+                <div class="container  mb-2" id="factionsTab">
+                    <div class="">
+                    </div>
                 </div>
             </div>
         </article>
@@ -118,3 +178,57 @@
         </article>
     </div>
 {% endblock content %}
+
+{% block javascript %}
+    <script>
+
+        const summaryPanelBlock =  $('#summaryPanelBlock')
+        const overviewTab =  $('#overviewTab')
+        const outfittingTab =  $('#outfittingTab')
+        const factionsTab =  $('#factionsTab')
+
+        const overviewTabButton =  $('#overviewTabButton')
+        const outfittingTabButton =  $('#outfittingTabButton')
+        const factionsTabButton =  $('#factionsTabButton')
+
+        let activeTab = overviewTab
+        let activeTabButton = overviewTabButton
+
+        function showOverviewTab() {
+            if (activeTab === overviewTab) return
+            activeTab.hide()
+            overviewTab.show()
+            activeTabButton.removeClass("is-active")
+            overviewTabButton.addClass("is-active")
+            activeTab = overviewTab
+            activeTabButton = overviewTabButton
+        }
+
+        function showOutfittingTab() {
+            if (activeTab === outfittingTab) return
+            activeTab.hide()
+            outfittingTab.show()
+            activeTabButton.removeClass("is-active")
+            outfittingTabButton.addClass("is-active")
+            activeTab = outfittingTab
+            activeTabButton = outfittingTabButton
+        }
+
+        function showFactionsTab() {
+            if (activeTab === factionsTab) return
+            activeTab.hide()
+            factionsTab.show()
+            activeTabButton.removeClass("is-active")
+            factionsTabButton.addClass("is-active")
+            activeTab = factionsTab
+            activeTabButton = factionsTabButton
+        }
+
+        $(document).ready(function () {
+            overviewTab.show()
+            outfittingTab.hide()
+            factionsTab.hide()
+        });
+
+    </script>
+{% endblock javascript %}

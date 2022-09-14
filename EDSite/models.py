@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Q
-from EDSite.helpers import StationType, difference_percent, is_listing_better_than
+from EDSite.helpers import StationType, difference_percent, is_listing_better_than, datetime_to_age_string
 from django.core.cache import cache
 import datetime
 from django.conf import settings
@@ -222,15 +222,7 @@ class Station(models.Model):
 
     @property
     def age_string(self):
-        if not self.modified:
-            return "Unknown"
-        age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
-        if age_delta < datetime.timedelta(seconds=3600):
-            return f"{int(age_delta.seconds / 60)} minutes"
-        elif age_delta < datetime.timedelta(days=1):
-            return f"{int(age_delta.seconds / 3600)} hours"
-        else:
-            return f"{age_delta.days} days"
+        return datetime_to_age_string(self.modified)
 
     def set_listings(self, listings_list: ['LiveListing']):
         # with transaction.atomic():
@@ -280,6 +272,32 @@ class Station(models.Model):
 
         if new_historic_listings:
             HistoricListing.objects.bulk_create(new_historic_listings)
+
+    @property
+    def services_list(self):
+        enabled = []
+        disabled = []
+        for is_true, service_string in [(self.market, "Market"),
+                                        (self.black_market, "Black Market"),
+                                        (self.shipyard, "Shipyard"),
+                                        (self.outfitting, "Outfitting"),
+                                        (self.rearm, "Rearm"),
+                                        (self.refuel, "Refuel"),
+                                        (self.repair, "Repair"),
+                                        ]:
+            if is_true:
+                enabled.append(service_string)
+            else:
+                disabled.append(service_string)
+        return enabled, disabled
+
+    @property
+    def enabled_services(self):
+        return self.services_list[0]
+
+    @property
+    def disabled_services(self):
+        return self.services_list[1]
 
     @property
     def is_live(self):
@@ -379,13 +397,7 @@ class LiveListing(models.Model):
 
     @property
     def age_string(self):
-        age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.modified
-        if age_delta < datetime.timedelta(seconds=3600):
-            return f"{int(age_delta.seconds / 60)} minutes"
-        elif age_delta < datetime.timedelta(days=1):
-            return f"{int(age_delta.seconds / 3600)} hours"
-        else:
-            return f"{age_delta.days} days"
+        return datetime_to_age_string(self.modified)
 
     def __str__(self):
         return f'{self.commodity.name} @ {self.station.fullname} ({self.station.id}) S:{self.supply_units}@{self.supply_price} and B:{self.demand_units}@{self.demand_price}'
@@ -425,13 +437,7 @@ class HistoricListing(models.Model):
 
     @property
     def age_string(self):
-        age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - self.datetime
-        if age_delta < datetime.timedelta(seconds=3600):
-            return f"{int(age_delta.seconds / 60)} minutes"
-        elif age_delta < datetime.timedelta(days=1):
-            return f"{int(age_delta.seconds / 3600)} hours"
-        else:
-            return f"{age_delta.days} days"
+        return datetime_to_age_string(self.datetime)
 
     def __str__(self):
         return f'{self.commodity.name} on {self.datetime} @ {self.station.fullname} ({self.station.id}) S:{self.supply_units}@{self.supply_price} and B:{self.demand_units}@{self.demand_price}'

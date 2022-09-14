@@ -42,6 +42,16 @@ def get_value(h, key):
 
 
 @register.filter
+def join(iterable, string):
+    return string.join(iterable)
+
+
+@register.filter
+def distance_to(system1: System, system2: System):
+    return int(system1.distance_to(system2))
+
+
+@register.filter
 def js(obj):
     if isinstance(obj, Station):
         ser = StationSerializer(obj).data

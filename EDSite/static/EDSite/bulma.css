@@ -7841,6 +7841,15 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 .is-primary-text-color {
   color: #FF7844 !important; }
 
+.is-green-text-color {
+  color: #48c78e !important; }
+
+.is-red-text-color {
+  color: #f14668 !important; }
+
+.is-red-muted-color {
+  color: #b83300 !important; }
+
 .footer {
   background-color: #222831;
   color: #EEEEEE; }
@@ -7848,12 +7857,12 @@ a.has-text-danger-dark:hover, a.has-text-danger-dark:focus {
 .unit {
   color: #FF7844; }
 
-.column_fixed_10 {
+.column-fixed-10 {
   width: 10em;
   flex-basis: auto;
   flex-grow: 0; }
 
-.column_fixed_20 {
+.column-fixed-20 {
   width: 20em;
   flex-basis: auto;
   flex-grow: 0; }

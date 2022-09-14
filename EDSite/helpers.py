@@ -55,6 +55,20 @@ def is_listing_better_than(first: 'LiveListing', second: 'LiveListing', mode: st
         return False
 
 
+def datetime_to_age_string(dt):
+    if not dt:
+        return "Unknown"
+    age_delta: datetime.timedelta = datetime.datetime.now(tz=datetime.timezone.utc) - dt
+    if age_delta < datetime.timedelta(seconds=3600):
+        return f"{int(age_delta.seconds / 60)} minutes"
+    elif age_delta < datetime.timedelta(days=1):
+        return f"{int(age_delta.seconds / 3600)} hours"
+    else:
+        if age_delta.days == 1:
+            return '1 day'
+        return f"{age_delta.days} days"
+
+
 def make_timezone_aware(dt: datetime.datetime) -> datetime.datetime:
     return dt.replace(tzinfo=datetime.timezone.utc)
 
