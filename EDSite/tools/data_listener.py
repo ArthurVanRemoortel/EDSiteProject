@@ -194,7 +194,6 @@ class LiveListener:
             except IndexError:
                 time.sleep(1)
                 continue
-
             # print('-------------------------------------------------')
             # Get the station_is using the system and station names.
             system_name = entry.system.lower()
@@ -278,7 +277,6 @@ class LiveListener:
             supportedSchema = self.supportedSchema
             sub = self.subscriber
             batch = defaultdict(list)
-
             if self.wait_for_data(softCutoff, hardCutoff):
                 bursts = 0
                 for _ in range(self.burstLimit):
@@ -302,6 +300,7 @@ class LiveListener:
 
                     try:
                         schema = data["$schemaRef"]
+                        # print('Received schema:', schema)
                     except KeyError:
                         continue
                     if schema != supportedSchema:

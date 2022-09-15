@@ -228,7 +228,7 @@ class Station(models.Model):
         # with transaction.atomic():
         exising_listings = {ll.commodity_id: ll for ll in LiveListing.objects.filter(station_tradedangerous_id=self.tradedangerous_id).all()}
         # To delete is everything minus updated.
-        updated_listings = []
+        updated_listings: {int: LiveListing} = {}
         new_listings = []
         new_historic_listings = []
 
@@ -248,25 +248,31 @@ class Station(models.Model):
                 existing_match.supply_units = new_ll.supply_units
                 existing_match.modified     = new_ll.modified
                 existing_match.from_live    = new_ll.from_live
-                updated_listings.append(existing_match)
+                updated_listings[existing_match.id] = existing_match
             else:
                 # It's a new listing.
                 new_listings.append(new_ll)
 
-
+        # print('To Update: ', updated_listings.keys())
         if updated_listings:
             # print("Updating:", len(updated_listings))
             with transaction.atomic():
-                for updated_ll in updated_listings:
-                    updated_ll.save()
-                    # e = LiveListing.objects.select_for_update().filter(id=updated_ll.id)
-                    # e.update(
-                    #     **{key: value for key, value in model_to_dict(updated_ll).items() if
-                    #        key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
-                    #                'from_live']})
+                #     for updated_ll in updated_listings:
+                #         # updated_ll.save()
+                #         LiveListing.objects.select_for_update().filter(id=updated_ll.id).update(
+                #             **{key: value for key, value in model_to_dict(updated_ll).items() if
+                #                key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
+                #                        'from_live']})
+                to_update = LiveListing.objects.select_for_update().filter(pk__in=sorted(updated_listings.keys()))
+                for to_update_ll in to_update:
+                    for attribute in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']:
+                        to_update_ll.__setattr__(attribute, updated_listings[to_update_ll.id].__getattribute__(attribute))
+                    to_update_ll.save()
+                    # print("Updated: ", to_update_ll.id, to_update_ll)
+                    # for key, value in model_to_dict(updated_ll).items() if key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']
 
         if updated_listings:
-            LiveListing.objects.filter(Q(station_tradedangerous_id=self.tradedangerous_id) & ~Q(pk__in=[ll.id for ll in updated_listings])).delete()
+            LiveListing.objects.filter(Q(station_tradedangerous_id=self.tradedangerous_id) & ~Q(pk__in=[ll_id for ll_id, ll in updated_listings.items()])).delete()
 
         if new_listings:
             LiveListing.objects.bulk_create(new_listings)
@@ -284,8 +290,7 @@ class Station(models.Model):
                                         (self.outfitting, "Outfitting"),
                                         (self.rearm, "Rearm"),
                                         (self.refuel, "Refuel"),
-                                        (self.repair, "Repair"),
-                                        ]:
+                                        (self.repair, "Repair")]:
             if is_true:
                 enabled.append(service_string)
             else:
