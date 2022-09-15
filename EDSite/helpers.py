@@ -27,7 +27,7 @@ def execute_wrapper(*args, **kwargs):
             return original(*args, **kwargs)
         except OperationalError as e:
             code = e.args[0]
-            if attempts == 2 or code != 1213:
+            if attempts == 2 or code != 1213 or code != 1205:
                 raise e
             print("WARNING: Detected a deadlock. Will retry...")
             attempts += 1

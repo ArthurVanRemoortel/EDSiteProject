@@ -212,6 +212,7 @@ class EDData(metaclass=SingletonMeta):
         for station_tradedangerous_id, station in stations.items():
             if station_tradedangerous_id not in td_stations:
                 print(f'Trying to delete station: {station}')
+                
                 # Don't delete carriers
                 # deleted_stations_ids.add(station.id)
 
