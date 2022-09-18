@@ -57,9 +57,13 @@ class EDDatabaseState(Enum):
 
 
 class StationType(Enum):
-    FLEET = 'FC'
-    PLANETARY = 'P'
-    STATION = 'S'
+    FLEET = "FC"
+    PLANETARY = "P"
+    STATION = "S"
+
+
+def is_carrier_name(name: str) -> bool:
+    return len(name) == 7 and name[3]
 
 
 def difference_percent(a, b):
@@ -70,7 +74,9 @@ def difference_percent(a, b):
     return (abs(a - b) / b) * 100.0
 
 
-def is_listing_better_than(first: 'LiveListing', second: 'LiveListing', mode: str) -> bool:
+def is_listing_better_than(
+    first: "LiveListing", second: "LiveListing", mode: str
+) -> bool:
     if mode == "supply":
         return first.supply_price <= second.supply_price
     elif mode == "demand":
@@ -89,7 +95,7 @@ def datetime_to_age_string(dt):
         return f"{int(age_delta.seconds / 3600)} hours"
     else:
         if age_delta.days == 1:
-            return '1 day'
+            return "1 day"
         return f"{age_delta.days} days"
 
 
@@ -97,34 +103,34 @@ def make_timezone_aware(dt: datetime.datetime) -> datetime.datetime:
     return dt.replace(tzinfo=datetime.timezone.utc)
 
 
-def display_top_memory(snapshot, key_type='lineno', limit=3):
-    snapshot = snapshot.filter_traces((
-        tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
-        tracemalloc.Filter(False, "<unknown>"),
-    ))
-    top_stats = snapshot.statistics(key_type)
+# def display_top_memory(snapshot, key_type='lineno', limit=3):
+#     snapshot = snapshot.filter_traces((
+#         tracemalloc.Filter(False, "<frozen importlib._bootstrap>"),
+#         tracemalloc.Filter(False, "<unknown>"),
+#     ))
+#     top_stats = snapshot.statistics(key_type)
+#
+#     print("Top %s lines" % limit)
+#     for index, stat in enumerate(top_stats[:limit], 1):
+#         frame = stat.traceback[0]
+#         # replace "/path/to/module/file.py" with "module/file.py"
+#         filename = os.sep.join(frame.filename.split(os.sep)[-2:])
+#         print("#%s: %s:%s: %.1f KiB"
+#               % (index, filename, frame.lineno, stat.size / 1024))
+#         line = linecache.getline(frame.filename, frame.lineno).strip()
+#         if line:
+#             print('    %s' % line)
+#
+#     other = top_stats[limit:]
+#     if other:
+#         size = sum(stat.size for stat in other)
+#         print("%s other: %.1f KiB" % (len(other), size / 1024))
+#     total = sum(stat.size for stat in top_stats)
+#     print("Total allocated size: %.1f KiB" % (total / 1024))
 
-    print("Top %s lines" % limit)
-    for index, stat in enumerate(top_stats[:limit], 1):
-        frame = stat.traceback[0]
-        # replace "/path/to/module/file.py" with "module/file.py"
-        filename = os.sep.join(frame.filename.split(os.sep)[-2:])
-        print("#%s: %s:%s: %.1f KiB"
-              % (index, filename, frame.lineno, stat.size / 1024))
-        line = linecache.getline(frame.filename, frame.lineno).strip()
-        if line:
-            print('    %s' % line)
 
-    other = top_stats[limit:]
-    if other:
-        size = sum(stat.size for stat in other)
-        print("%s other: %.1f KiB" % (len(other), size / 1024))
-    total = sum(stat.size for stat in top_stats)
-    print("Total allocated size: %.1f KiB" % (total / 1024))
-
-
-def queryset_iterator(qs, chunk_size = 500, gc_collect = True):
-    iterator = qs.values_list('pk', flat=True).order_by('pk').distinct().iterator()
+def queryset_iterator(qs, chunk_size=500, gc_collect=True):
+    iterator = qs.values_list("pk", flat=True).order_by("pk").distinct().iterator()
     eof = False
     while not eof:
         primary_key_buffer = []
@@ -133,7 +139,7 @@ def queryset_iterator(qs, chunk_size = 500, gc_collect = True):
                 primary_key_buffer.append(iterator.next())
         except StopIteration:
             eof = True
-        for obj in qs.filter(pk__in=primary_key_buffer).order_by('pk').iterator():
+        for obj in qs.filter(pk__in=primary_key_buffer).order_by("pk").iterator():
             yield obj
         if gc_collect:
             gc.collect()
@@ -171,7 +177,7 @@ def list_to_columns(lst, cols):
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
-        yield lst[i:i + n]
+        yield lst[i : i + n]
 
 
 def chunks_no_overlap(lst, n):
@@ -191,24 +197,26 @@ def chunks_no_overlap(lst, n):
 def update_item_dict():
     # We'll use this to get the fdev_id from the 'symbol', AKA commodity['name'].lower()
     db_name = dict()
-    edcd_source = 'https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv'
+    edcd_source = "https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv"
     edcd_csv = request.urlopen(edcd_source)
-    edcd_dict = csv.DictReader(codecs.iterdecode(edcd_csv, 'utf-8'))
+    edcd_dict = csv.DictReader(codecs.iterdecode(edcd_csv, "utf-8"))
     for line in iter(edcd_dict):
-        db_name[line['symbol'].lower()] = line['id']
+        db_name[line["symbol"].lower()] = line["id"]
 
     # Rare items are in a different file.
-    edcd_rare_source = 'https://raw.githubusercontent.com/EDCD/FDevIDs/master/rare_commodity.csv'
+    edcd_rare_source = (
+        "https://raw.githubusercontent.com/EDCD/FDevIDs/master/rare_commodity.csv"
+    )
     edcd_rare_csv = request.urlopen(edcd_rare_source)
-    edcd_rare_dict = csv.DictReader(codecs.iterdecode(edcd_rare_csv, 'utf-8'))
+    edcd_rare_dict = csv.DictReader(codecs.iterdecode(edcd_rare_csv, "utf-8"))
     for line in iter(edcd_rare_dict):
-        db_name[line['symbol'].lower()] = line['id']
+        db_name[line["symbol"].lower()] = line["id"]
 
     # We'll use this to get the commodity_id from the fdev_id because it's faster than a database lookup.
     item_ids = dict()
 
     # Rare items don't have an EDDB commodity_id, so we'll just store them by the fdev_id
     for line in iter(edcd_rare_dict):
-        item_ids[line['id']] = line['id']
+        item_ids[line["id"]] = line["id"]
 
     return db_name, item_ids

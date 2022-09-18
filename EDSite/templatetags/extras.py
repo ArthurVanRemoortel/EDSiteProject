@@ -26,7 +26,9 @@ def external_url(obj, site):
             return f"https://eddb.io/system/{obj.tradedangerous_id}"
     elif isinstance(obj, Station):
         if site == "inara":
-            return f"https://inara.cz/elite/station/?search={obj.name} [{obj.system.name}]"
+            return (
+                f"https://inara.cz/elite/station/?search={obj.name} [{obj.system.name}]"
+            )
         elif site == "eddb":
             return f"https://eddb.io/station/{obj.tradedangerous_id}"
     elif isinstance(obj, Commodity):
@@ -58,18 +60,18 @@ def js(obj):
         return ser
 
 
-@register.inclusion_tag('EDSite/snippets/sized_icon.html')
+@register.inclusion_tag("EDSite/snippets/sized_icon.html")
 def sized_icon(img_name, size):
-    return {'img_name': img_name, 'size': size, 'rounded': False}
+    return {"img_name": img_name, "size": size, "rounded": False}
 
 
-@register.inclusion_tag('EDSite/snippets/sized_icon.html')
+@register.inclusion_tag("EDSite/snippets/sized_icon.html")
 def sized_rounded_icon(img_name, size):
     base_template = sized_icon(img_name, size)
-    base_template['rounded'] = True
+    base_template["rounded"] = True
     return base_template
 
 
-@register.inclusion_tag('EDSite/snippets/open_external.html')
+@register.inclusion_tag("EDSite/snippets/open_external.html")
 def open_external(trigger_id, obj, placement):
-    return {'trigger_id': trigger_id, 'object': obj, 'placement': placement}
+    return {"trigger_id": trigger_id, "object": obj, "placement": placement}

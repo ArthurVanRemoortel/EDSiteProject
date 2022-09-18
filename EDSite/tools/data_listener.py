@@ -13,8 +13,10 @@ import zmq
 from django.db import transaction
 from django.forms import model_to_dict
 
-from EDSite.helpers import make_timezone_aware, difference_percent
-from EDSite.models import Commodity, LiveListing, Station, HistoricListing
+from EDSite.helpers import make_timezone_aware, difference_percent, is_carrier_name
+from EDSite.models import Commodity, LiveListing, Station, HistoricListing, System
+
+import EDSite.tools.external.edsm as edsm
 
 # WHITELISTED_SOFTWARE = [
 #     "E:D Market Connector [Windows]",
@@ -25,18 +27,19 @@ from EDSite.models import Commodity, LiveListing, Station, HistoricListing
 #     "EDDI",
 # ]
 
-ALT_COMMODITY_NAMES = {
-}
+ALT_COMMODITY_NAMES = {}
 
 FAILED_COMMODITIES_LOG = set()
 
 
 def update_alt_commodity_names():
-    edcd_source = 'https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv'
+    edcd_source = "https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv"
     edcd_csv = request.urlopen(edcd_source)
-    for line in iter(csv.DictReader(codecs.iterdecode(edcd_csv, 'utf-8'))):
+    for line in iter(csv.DictReader(codecs.iterdecode(edcd_csv, "utf-8"))):
         try:
-            ALT_COMMODITY_NAMES[line['symbol'].lower()] = line['name'].lower().replace(' ', '').replace('-', '')
+            ALT_COMMODITY_NAMES[line["symbol"].lower()] = (
+                line["name"].lower().replace(" ", "").replace("-", "")
+            )
         except KeyError as e:
             ...
 
@@ -53,34 +56,74 @@ update_alt_commodity_names()
 #             ...
 
 
-class MarketPriceEntry(namedtuple('MarketPriceEntry', [
-    'system',
-    'station',
-    'commodities',
-    'timestamp',
-    'uploader',
-    'software',
-    'version',
-])):
+class MarketPriceEntry(
+    namedtuple(
+        "MarketPriceEntry",
+        [
+            "system",
+            "station",
+            "commodities",
+            "timestamp",
+            "uploader",
+            "software",
+            "version",
+        ],
+    )
+):
     pass
 
 
-class LiveListener:
-    uri = 'tcp://eddn.edcd.io:9500'
-    supportedSchema = 'https://eddn.edcd.io/schemas/commodity/3'
+def create_station(station_name: str, system: System, extra=None):
+    if extra is None:
+        extra = {}
+    listings = extra.get("listings")
+    if is_carrier_name(station_name):
+        station = Station(
+            name=station_name.upper(),
+            ls_from_star=0,  # Assuming 0. Might not be accurate.
+            pad_size="L",
+            modified=make_timezone_aware(datetime.now()),
+            market=listings is not None,
+            black_market=False,
+            shipyard=False,
+            outfitting=False,
+            rearm=True,
+            refuel=True,
+            repair=True,
+            planetary=False,
+            fleet=True,
+            odyssey=False,
+        )
+    else:
+        data = edsm.find_station(station_name, system.name)
+        if data:
+            station = edsm.create_station_from_data(data)
+        else:
+            print(
+                f"Did not find {station_name} in {system}. It might not exist yet on EDSM but it might appear soon. TODO: Try again later"
+            )
+            return None
+    station.system_id = system.id
+    station.tradedangerous_id = None
+    station.save()
+    return station
 
+
+class LiveListener:
+    uri = "tcp://eddn.edcd.io:9500"
+    supportedSchema = "https://eddn.edcd.io/schemas/commodity/3"
 
     def __init__(
-            self,
-            ed_data: 'EDData',
-            zmqContext=None,
-            minBatchTime=36.,  # seconds
-            maxBatchTime=60.,  # seconds
-            reconnectTimeout=30.,  # seconds
-            burstLimit=500,
+        self,
+        ed_data: "EDData",
+        zmqContext=None,
+        minBatchTime=36.0,  # seconds
+        maxBatchTime=60.0,  # seconds
+        reconnectTimeout=30.0,  # seconds
+        burstLimit=500,
     ):
 
-        self.ed_data: 'EDData' = ed_data
+        self.ed_data: "EDData" = ed_data
         self.last_received = None
         assert burstLimit > 0
         if not zmqContext:
@@ -96,11 +139,15 @@ class LiveListener:
 
         self.listener_thread = None
         self.processor_thread = None
-        self.commodity_names = {c.name.lower().replace(' ', '').replace('-', ''): c for c in Commodity.objects.only('name').all()}
-        # self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
+        self.commodity_names = {
+            c.name.lower().replace(" ", "").replace("-", ""): c
+            for c in Commodity.objects.only("name").all()
+        }
+
+        self.retry_stations = {}
+
         self.data_queue = deque()
         self.connect()
-
 
     def pause(self):
         print("Pausing the EDDBLink")
@@ -130,7 +177,6 @@ class LiveListener:
         self.processor_thread = threading.Thread(target=self.process_messages)
         self.processor_thread.start()
 
-
     def wait_for_data(self, softCutoff, hardCutoff):
         now = time.time()
         cutoff = min(softCutoff, hardCutoff)
@@ -152,7 +198,9 @@ class LiveListener:
         new_stations = []
         new_listings: {Station, [LiveListing]} = {}
         new_historic_listings = []
-        carriers_of_interest = self.ed_data.get_carriers_of_interest()  # TODO: Update this regularly.
+        carriers_of_interest = (
+            self.ed_data.get_carriers_of_interest()
+        )  # TODO: Update this regularly.
 
         while self.active:
 
@@ -160,33 +208,33 @@ class LiveListener:
                 time.sleep(1)
                 continue
             if len(self.data_queue) > 5:
-                print(f'WARNING: {len(self.data_queue)} items on queue.')
+                print(f"WARNING: {len(self.data_queue)} items on queue.")
 
             if new_listings:
                 for station, listings in new_listings.items():
                     if station.name == "K7Q-BQL":
-                        print(f"Updating station listing of {station}({station.id})({station.tradedangerous_id}) to {len(listings)}")
+                        print(
+                            f"Updating station listing of {station}({station.id})({station.tradedangerous_id}) to {len(listings)}"
+                        )
                     station.set_listings(listings)
                     if station.id not in to_update_stations:
                         to_update_stations[station.id] = station
                     try:
                         to_update_stations[station.id].modified = listings[0].modified
                     except IndexError:
-                        to_update_stations[station.id].modified = make_timezone_aware(datetime.now())
+                        to_update_stations[station.id].modified = make_timezone_aware(
+                            datetime.now()
+                        )
                     for new_listing in listings:
                         cached_buy, cached_sell = new_listing.cache_if_better()
-                        # if cached_buy:
-                        #     print(f"Updated best buy to\n\t{new_listing}")
-                        # if cached_sell:
-                        #     print(f"Updated best sell to\n\t{new_listing}")
-                        # if cached_buy or cached_sell:
-                        #     print("")
                 new_listings = {}
 
             if len(to_update_stations.keys()) > 0:
                 with transaction.atomic():
                     for station in to_update_stations.values():
-                        Station.objects.select_for_update().filter(id=station.id).update(system_id=station.system_id, modified=station.modified)
+                        Station.objects.select_for_update().filter(
+                            id=station.id
+                        ).update(system_id=station.system_id, modified=station.modified)
                 to_update_stations = {}
 
             try:
@@ -204,8 +252,10 @@ class LiveListener:
             #     continue
             # And the software version used to upload the schema.
             try:
-                modified = entry.timestamp.replace('T', ' ').replace('Z', '')
-                modified = make_timezone_aware(datetime.strptime(modified, "%Y-%m-%d %H:%M:%S"))
+                modified = entry.timestamp.replace("T", " ").replace("Z", "")
+                modified = make_timezone_aware(
+                    datetime.strptime(modified, "%Y-%m-%d %H:%M:%S")
+                )
             except:
                 continue
             commodities = entry.commodities
@@ -213,8 +263,10 @@ class LiveListener:
                 continue
             if station_name == "K7Q-BQL":
                 print("RECEIVED: ", station_name, system_name)
-            station: Station = self.ed_data.station_names_dict.get((station_name, system_name))
-            if not station and len(station_name) == 7 and station_name[3] == '-':
+            station: Station = self.ed_data.station_names_dict.get(
+                (station_name, system_name)
+            )
+            if not station and len(station_name) == 7 and station_name[3] == "-":
                 # print("Looking for station ignoring system")
                 for station_key, value in self.ed_data.station_names_dict.items():
                     if station_key[0] == station_name:
@@ -228,26 +280,53 @@ class LiveListener:
                             pass
                             # TODO: New systems not in db yet.
 
+            if not station:
+                print(
+                    f"Station not found: {(station_name, system_name)}. Will create a temporary one."
+                )
+                system = self.ed_data.system_names.get(system_name)
+                if not system:
+                    print(f"System {system_name} for {station_name} is not known.")
+                    continue
+                else:
+                    try:
+                        station = create_station(
+                            station_name, system, extra={"listings": commodities}
+                        )
+                    except Exception as err:
+                        print("ERROR create_station:", err)
+                        raise err
+                    if station:
+                        self.ed_data.station_names_dict[
+                            (station_name.lower(), system_name.lower())
+                        ] = station
+
             if station:
-                # station_listings = {listing.commodity_id: listing for listing in LiveListing.objects.filter(station_tradedangerous_id=station.tradedangerous_id)}
                 new_listings[station] = []
                 for commodity_entry in commodities:
-                    commodity_name = commodity_entry['name'].lower()
-                    if (commodity_entry['sellPrice'] == 0 and commodity_entry['buyPrice'] == 0) or (commodity_entry['demand'] == 0 and commodity_entry['stock'] == 0):
+                    commodity_name = commodity_entry["name"].lower()
+                    if (
+                        commodity_entry["sellPrice"] == 0
+                        and commodity_entry["buyPrice"] == 0
+                    ) or (
+                        commodity_entry["demand"] == 0 and commodity_entry["stock"] == 0
+                    ):
                         continue
                     commodity: Commodity = self.commodity_names.get(commodity_name)
                     if not commodity:
-                        commodity = self.commodity_names.get(ALT_COMMODITY_NAMES.get(commodity_name))
+                        commodity = self.commodity_names.get(
+                            ALT_COMMODITY_NAMES.get(commodity_name)
+                        )
                         if not commodity:
                             fixed_name = ALT_COMMODITY_NAMES.get(commodity_name)
                             if fixed_name:
-                                fixed_name += 's'
+                                fixed_name += "s"
                             commodity = self.commodity_names.get(fixed_name)
                     if commodity:
-                        demand_price = commodity_entry['sellPrice']
-                        supply_price = commodity_entry['buyPrice']
-                        demand_units = commodity_entry['demand']
-                        supply_units = commodity_entry['stock']
+                        demand_price = commodity_entry["sellPrice"]
+                        supply_price = commodity_entry["buyPrice"]
+                        demand_units = commodity_entry["demand"]
+                        supply_units = commodity_entry["stock"]
                         live_listing = LiveListing(
                             commodity_id=commodity.id,
                             commodity_tradedangerous_id=commodity.tradedangerous_id,
@@ -258,16 +337,13 @@ class LiveListener:
                             supply_price=supply_price,
                             supply_units=supply_units,
                             modified=modified,
-                            from_live=1
+                            from_live=1,
                         )
                         new_listings[station].append(live_listing)
                     else:
                         if commodity_name not in FAILED_COMMODITIES_LOG:
                             FAILED_COMMODITIES_LOG.add(commodity_name)
-                            print('WARNING: Commodity not found: ', commodity_name)
-            else:
-                print(f"Station not found: {(station_name, system_name)}")
-            # TODO: Delete listings.
+                            print("WARNING: Commodity not found: ", commodity_name)
 
     def get_batch(self):
         while self.active:
@@ -327,9 +403,13 @@ class LiveListener:
                         oldEntryList.append(None)
 
                     oldEntryList[0] = MarketPriceEntry(
-                        system, station, commodities,
+                        system,
+                        station,
+                        commodities,
                         timestamp,
-                        uploader, software, swVersion,
+                        uploader,
+                        software,
+                        swVersion,
                     )
 
                 if bursts >= self.burstLimit:

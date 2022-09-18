@@ -20,6 +20,7 @@ pyzmq = "^23.2.1"
 Django = "4.0.6"
 django-redis = "^5.2.0"
 djangorestframework = "^3.13.1"
+black = {extras = ["d"], version = "^22.8.0"}
 
 
 [build-system]

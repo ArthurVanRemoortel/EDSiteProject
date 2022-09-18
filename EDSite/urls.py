@@ -8,35 +8,38 @@ from . import views_api
 API_PREFIX = "api/"
 
 router = routers.DefaultRouter()
-router.register('commodities', views_api.CommoditiesViewSet, basename="api-commodities")
-router.register('listings', views_api.ListingsViewSet, basename="api-listings")
-router.register('systems', views_api.SystemsViewSet, basename="api-systems")
-router.register('stations', views_api.StationsViewSet, basename="api-stations")
+router.register("commodities", views_api.CommoditiesViewSet, basename="api-commodities")
+router.register("listings", views_api.ListingsViewSet, basename="api-listings")
+router.register("systems", views_api.SystemsViewSet, basename="api-systems")
+router.register("stations", views_api.StationsViewSet, basename="api-stations")
 
 urlpatterns = [
     path(API_PREFIX, include(router.urls)),
-
-    path('', views.index, name='index'),
-    path('systems', views.systems, name='systems'),
-    path('stations', views.stations, name='stations'),
-    path('stations/<int:station_id>', views.station, name='station'),
-    path('systems/<int:system_id>', views.system, name='system'),
-    path('commodities', views.commodities, name='commodities'),
-    path('commodities/<int:commodity_id>', views.commodity, name='commodity'),
-    path('rares', views.rares, name='rares'),
-
-    path('debug_reload', views.debug_reload, name='debug_reload'),
-    path('debug_update_database<str:mode>', views.debug_update_database, name='debug_update_database'),
-
+    path("", views.index, name="index"),
+    path("systems", views.systems, name="systems"),
+    path("stations", views.stations, name="stations"),
+    path("stations/<int:station_id>", views.station, name="station"),
+    path("systems/<int:system_id>", views.system, name="system"),
+    path("commodities", views.commodities, name="commodities"),
+    path("commodities/<int:commodity_id>", views.commodity, name="commodity"),
+    path("rares", views.rares, name="rares"),
+    path("debug_reload", views.debug_reload, name="debug_reload"),
+    path(
+        "debug_update_database<str:mode>",
+        views.debug_update_database,
+        name="debug_update_database",
+    ),
     path("signup", views.signup_view, name="signup"),
     path("login", views.login_view, name="login"),
-
     path("profile", views.profile_view, name="profile"),
     path("logout", views.logout_view, name="logout"),
-
     path("trade/trade-routes", views.trade_routes, name="trade-routes"),
     path("trade/carrier-missions", views.carrier_missions, name="carrier-missions"),
-    path("trade/carrier-missions/<str:tab>", views.carrier_missions, name="carrier-missions"),
+    path(
+        "trade/carrier-missions/<str:tab>",
+        views.carrier_missions,
+        name="carrier-missions",
+    ),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

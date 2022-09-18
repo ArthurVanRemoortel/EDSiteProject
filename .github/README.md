@@ -38,7 +38,8 @@ TODO:
   - Remember user location.
   - Live updater needs to update redis cache too.
   - Improvements to autocomplete text.
-- Fixes:
+- Fixes:- 
+  - !! Handle listings where station_tradedangerous_id is None
   - Auto background updates
   - Testing
   - Admin tools.

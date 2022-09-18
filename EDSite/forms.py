@@ -5,15 +5,12 @@ from django.forms import ModelForm
 from django.forms.widgets import PasswordInput, NumberInput
 from django.core.validators import MaxValueValidator, MinValueValidator
 
-YES_NO_CHOICES = [
-    ('yes', 'Yes'),
-    ('no', 'No')
-]
+YES_NO_CHOICES = [("yes", "Yes"), ("no", "No")]
 
 LANDING_PAD_CHOICES = [
-    ('S', 'S'),
-    ('M', 'M'),
-    ('L', 'L'),
+    ("S", "S"),
+    ("M", "M"),
+    ("L", "L"),
 ]
 
 
@@ -24,14 +21,12 @@ class ChoiceFieldNoValidation(forms.ChoiceField):
 
 class CommodityForm(forms.Form):
     reference_system = ChoiceFieldNoValidation(
-        widget=forms.Select(
-            attrs={'class': 'input', 'id': 'referenceInput'}
-        ),
+        widget=forms.Select(attrs={"class": "input", "id": "referenceInput"}),
         required=False,
     )
     buy_or_sell = forms.ChoiceField(
         required=False,
-        choices=[('buy', 'Buy'), ('sell', 'Sell')],
+        choices=[("buy", "Buy"), ("sell", "Sell")],
     )
     include_odyssey = forms.ChoiceField(
         widget=forms.Select(
@@ -56,10 +51,7 @@ class CommodityForm(forms.Form):
     )
     minimum_units = forms.CharField(
         widget=forms.TextInput(
-            attrs={
-                'class': 'input',
-                'placeholder': '0'
-            },
+            attrs={"class": "input", "placeholder": "0"},
         ),
         required=False,
     )
@@ -67,23 +59,15 @@ class CommodityForm(forms.Form):
 
 class SystemsForm(forms.Form):
     search = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'searchInput'}
-        ),
+        widget=forms.TextInput(attrs={"class": "input", "id": "searchInput"}),
         required=False,
     )
     reference_system = forms.ChoiceField(
-        widget=forms.Select(
-            attrs={'class': 'input', 'id': 'referenceInput'}
-        ),
+        widget=forms.Select(attrs={"class": "input", "id": "referenceInput"}),
         required=False,
     )
     only_populated = forms.ChoiceField(
-        widget=forms.Select(
-            attrs={
-                'class': 'input'
-            }
-        ),
+        widget=forms.Select(attrs={"class": "input"}),
         required=False,
         choices=YES_NO_CHOICES,
     )
@@ -91,15 +75,11 @@ class SystemsForm(forms.Form):
 
 class StationsForm(forms.Form):
     search = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'stationSearchInput'}
-        ),
+        widget=forms.TextInput(attrs={"class": "input", "id": "stationSearchInput"}),
         required=False,
     )
     reference_system = forms.ChoiceField(
-        widget=forms.Select(
-            attrs={'class': 'input', 'id': 'referenceInput'}
-        ),
+        widget=forms.Select(attrs={"class": "input", "id": "referenceInput"}),
         required=False,
     )
     include_fleet_carriers = forms.ChoiceField(
@@ -116,13 +96,13 @@ class StationsForm(forms.Form):
     )
     star_distance = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'},
+            attrs={"class": "input"},
         ),
         required=False,
     )
     system_distance = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input'},
+            attrs={"class": "input"},
         ),
         required=False,
     )
@@ -131,50 +111,50 @@ class StationsForm(forms.Form):
 class CarrierMissionForm(forms.Form):
     carrier_name = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'carrierNameField'},
+            attrs={"class": "input", "id": "carrierNameField"},
         ),
         required=True,
     )
     carrier_code = ChoiceFieldNoValidation(
         widget=forms.Select(
-            attrs={'class': 'input', 'id': 'carrierCodeField', 'data-width': "100%"},
+            attrs={"class": "input", "id": "carrierCodeField", "data-width": "100%"},
         ),
         required=True,
     )
     username = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input', 'readonly': True, 'id': 'usernameField'},
+            attrs={"class": "input", "readonly": True, "id": "usernameField"},
         ),
         required=True,
     )
     mission_type = forms.ChoiceField(
         required=True,
-        choices=[('L', 'Loading'), ('U', 'Unloading')],
+        choices=[("L", "Loading"), ("U", "Unloading")],
         widget=forms.Select(
-            attrs={'id': 'missionTypeField'},
+            attrs={"id": "missionTypeField"},
         ),
     )
     commodity = ChoiceFieldNoValidation(
         widget=forms.Select(
-            attrs={'class': 'input', 'id': 'commodityField', 'data-width': "100%"},
+            attrs={"class": "input", "id": "commodityField", "data-width": "100%"},
         ),
         required=True,
     )
     station = ChoiceFieldNoValidation(
         widget=forms.Select(
-            attrs={'class': 'input', 'id': 'stationField', 'data-width': "100%"},
+            attrs={"class": "input", "id": "stationField", "data-width": "100%"},
         ),
         required=True,
     )
     worker_profit = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'workerProfitField'},
+            attrs={"class": "input", "id": "workerProfitField"},
         ),
         required=True,
     )
     units = forms.CharField(
         widget=forms.TextInput(
-            attrs={'class': 'input', 'id': 'unitsField'},
+            attrs={"class": "input", "id": "unitsField"},
         ),
         required=True,
     )
@@ -182,27 +162,19 @@ class CarrierMissionForm(forms.Form):
 
 class SignupForm(UserCreationForm):
     username = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input'}
-        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
         required=True,
     )
     email = forms.EmailField(
-        widget=forms.TextInput(
-            attrs={'class': 'input'}
-        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
         required=True,
     )
     password1 = forms.CharField(
-        widget=PasswordInput(
-            attrs={'class': 'input'}
-        ),
+        widget=PasswordInput(attrs={"class": "input"}),
         required=True,
     )
     password2 = forms.CharField(
-        widget=PasswordInput(
-            attrs={'class': 'input'}
-        ),
+        widget=PasswordInput(attrs={"class": "input"}),
         required=True,
     )
 
@@ -212,8 +184,8 @@ class SignupForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super(UserCreationForm, self).save(commit=False)
-        user.email = self.cleaned_data['email']
-        user.set_password(self.cleaned_data['password1'])
+        user.email = self.cleaned_data["email"]
+        user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
         return user
@@ -227,16 +199,14 @@ class LoginForm(AuthenticationForm):
     #     required=False,
     # )
     username = forms.CharField(
-        widget=forms.TextInput(
-            attrs={'class': 'input'}
-        ),
+        widget=forms.TextInput(attrs={"class": "input"}),
         # required=True,
     )
     password = forms.CharField(
         label="Password",
         strip=False,
         widget=PasswordInput(
-            attrs={'class': 'input', "autocomplete": "current-password"}
+            attrs={"class": "input", "autocomplete": "current-password"}
         ),
         # required=True,
     )
