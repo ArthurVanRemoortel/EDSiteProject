@@ -7,7 +7,7 @@ django.setup()
 from EDSite.tools.data_listener import LiveListener
 
 from EDSite.tools.ed_data import EDData
-from EDSite.models import *
+from EDSite.models import Station, LiveListing
 
 
 def main():
@@ -16,4 +16,5 @@ def main():
 
 
 if __name__ == "__main__":
+    Station.objects.filter(tradedangerous_id=None).delete()
     main()

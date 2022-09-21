@@ -7,29 +7,27 @@ import zlib
 from collections import defaultdict, deque, namedtuple
 from datetime import datetime
 from pprint import pprint
+from typing import Optional, Any, Generator, Iterable
 from urllib import request
 
 import zmq
 from django.db import transaction
+from django.db.models import Q
 from django.forms import model_to_dict
 
 from EDSite.helpers import make_timezone_aware, difference_percent, is_carrier_name
 from EDSite.models import Commodity, LiveListing, Station, HistoricListing, System
 
 import EDSite.tools.external.edsm as edsm
-
-# WHITELISTED_SOFTWARE = [
-#     "E:D Market Connector [Windows]",
-#     "E:D Market Connector [Mac OS]",
-#     "E:D Market Connector [Linux]",
-#     "EDDiscovery",
-#     "EDSM",
-#     "EDDI",
-# ]
+from dataclasses import dataclass, field
 
 ALT_COMMODITY_NAMES = {}
 
 FAILED_COMMODITIES_LOG = set()
+
+
+class RetryException(Exception):
+    pass
 
 
 def update_alt_commodity_names():
@@ -45,15 +43,6 @@ def update_alt_commodity_names():
 
 
 update_alt_commodity_names()
-
-# with open('EDSite/tools/commodity.csv', newline='') as csvfile:
-#     edcd_dict = csv.DictReader(csvfile, 'utf-8')
-#
-#     for line in edcd_dict:
-#         try:
-#             ALT_COMMODITY_NAMES[line['t'].lower()] = line['-'].lower().replace(' ', '').replace('-', '')
-#         except KeyError:
-#             ...
 
 
 class MarketPriceEntry(
@@ -73,7 +62,45 @@ class MarketPriceEntry(
     pass
 
 
-def create_station(station_name: str, system: System, extra=None):
+@dataclass
+class RetryStation:
+    system: System
+    station_name: str
+    extra: {str: Any}
+    retries: int = 3
+    timeout: float = 30.0
+    remaining_timeout: float = field(init=False, default=30)
+
+    def reduce_timeout(self, dt: float) -> bool:
+        self.remaining_timeout -= dt
+        return self.remaining_timeout <= 0
+
+    def retry(self) -> Optional[Station]:
+        print(f"Retrying {self.station_name}...")
+        if self.retries <= 0:
+            raise RetryException
+        existing_station = Station.objects.get(Q(system_id=self.system.id) & Q(name__icontains=self.station_name))
+        if not existing_station:
+            station = create_station(self.station_name, self.system, self.extra)
+            self.retries -= 1
+            if not station:
+                self.remaining_timeout = self.timeout
+                print(
+                    f"WARNING: Retried creating {self.station_name} but failed again. {self.retries} retries remaining."
+                )
+            else:
+                self.retries = 0
+            return station
+        else:
+            print(f"WARNING. RetryStation tried to create new station {self.station_name} but it already existed. Ignored it.")
+            self.retries = 0
+            return existing_station
+
+    def __repr__(self):
+        return f"RetryStation: {self.station_name}, retries={self.retries}, remaining_timeout={self.remaining_timeout}"
+
+
+def create_station(station_name: str, system: System, extra=None) -> Optional[Station]:
     if extra is None:
         extra = {}
     listings = extra.get("listings")
@@ -83,7 +110,7 @@ def create_station(station_name: str, system: System, extra=None):
             ls_from_star=0,  # Assuming 0. Might not be accurate.
             pad_size="L",
             modified=make_timezone_aware(datetime.now()),
-            market=listings is not None,
+            market=len(listings) > 0,
             black_market=False,
             shipyard=False,
             outfitting=False,
@@ -107,6 +134,26 @@ def create_station(station_name: str, system: System, extra=None):
     station.tradedangerous_id = None
     station.save()
     return station
+
+
+def create_listings(new_listings: {Station, list[LiveListing]}):
+    stations = []
+    for station, listings in new_listings.items():
+        if station.name == "K7Q-BQL":
+            print(
+                f"Updating station listing of {station}({station.id})({station.tradedangerous_id}) to {len(listings)}"
+            )
+        station.set_listings(listings)
+        # print(f"Creating listings: {station}")
+        for new_listing in listings:
+            cached_buy, cached_sell = new_listing.cache_if_better()
+        if listings and station.modified != listings[0].modified:
+            try:
+                station.modified = listings[0].modified
+            except IndexError:
+                station.modified = make_timezone_aware(datetime.now())
+            stations.append(station)
+    return stations
 
 
 class LiveListener:
@@ -143,8 +190,6 @@ class LiveListener:
             c.name.lower().replace(" ", "").replace("-", ""): c
             for c in Commodity.objects.only("name").all()
         }
-
-        self.retry_stations = {}
 
         self.data_queue = deque()
         self.connect()
@@ -193,43 +238,42 @@ class LiveListener:
         return True
 
     def process_messages(self):
-        to_update_listings = []
         to_update_stations: {int: Station} = {}
-        new_stations = []
         new_listings: {Station, [LiveListing]} = {}
-        new_historic_listings = []
-        carriers_of_interest = (
-            self.ed_data.get_carriers_of_interest()
-        )  # TODO: Update this regularly.
+        retry_stations: [RetryStation] = []
 
         while self.active:
-
             if self.paused:
                 time.sleep(1)
                 continue
+
             if len(self.data_queue) > 5:
                 print(f"WARNING: {len(self.data_queue)} items on queue.")
 
-            if new_listings:
-                for station, listings in new_listings.items():
-                    if station.name == "K7Q-BQL":
-                        print(
-                            f"Updating station listing of {station}({station.id})({station.tradedangerous_id}) to {len(listings)}"
-                        )
-                    station.set_listings(listings)
-                    if station.id not in to_update_stations:
-                        to_update_stations[station.id] = station
-                    try:
-                        to_update_stations[station.id].modified = listings[0].modified
-                    except IndexError:
-                        to_update_stations[station.id].modified = make_timezone_aware(
-                            datetime.now()
-                        )
-                    for new_listing in listings:
-                        cached_buy, cached_sell = new_listing.cache_if_better()
-                new_listings = {}
+            retry_station: RetryStation
+            for retry_station in retry_stations:
+                print(f"Retry: {retry_station}")
+                # TODO: Should not be hardcoded to 1 seconds.
+                can_retry = retry_station.reduce_timeout(1.0)
+                if can_retry:
+                    station: Station = retry_station.retry()
+                    if station and "commodities" in retry_station.extra:
+                        print(f"Adding listings to RetryStation: {station}")
+                        new_listings[station] = retry_station.extra["commodities"]
+            retry_stations[:] = [rs for rs in retry_stations if rs.retries > 0]
 
-            if len(to_update_stations.keys()) > 0:
+            if new_listings:
+                # print(f"New listings: {len(new_listings)}")
+                updated_stations = create_listings(new_listings)
+                new_listings.clear()
+                for updated_station in updated_stations:
+                    if updated_station.id not in to_update_stations:
+                        to_update_stations[updated_station.id] = updated_station
+                    to_update_stations[
+                        updated_station.id
+                    ].modified = updated_station.modified
+
+            if to_update_stations:
                 with transaction.atomic():
                     for station in to_update_stations.values():
                         Station.objects.select_for_update().filter(
@@ -242,32 +286,30 @@ class LiveListener:
             except IndexError:
                 time.sleep(1)
                 continue
-            # print('-------------------------------------------------')
-            # Get the station_is using the system and station names.
+            # print(entry)
             system_name = entry.system.lower()
             station_name = entry.station.lower()
             software = entry.software
-            # if software not in WHITELISTED_SOFTWARE:
-            #     print(f"Software: {software} ignored")
-            #     continue
-            # And the software version used to upload the schema.
+
             try:
-                modified = entry.timestamp.replace("T", " ").replace("Z", "")
+                timestamp_string = entry.timestamp.replace("T", " ").replace("Z", "")
+                if "." in timestamp_string:
+                    timestamp_string = timestamp_string.split(".")[0]
                 modified = make_timezone_aware(
-                    datetime.strptime(modified, "%Y-%m-%d %H:%M:%S")
+                    datetime.strptime(timestamp_string, "%Y-%m-%d %H:%M:%S")
                 )
-            except:
+            except Exception as e:
+                print(f"Warning: Could not parse datetime from entry: {entry}")
                 continue
             commodities = entry.commodities
             if not commodities:
                 continue
-            if station_name == "K7Q-BQL":
+            if station_name == "K7Q-BQL".lower():
                 print("RECEIVED: ", station_name, system_name)
             station: Station = self.ed_data.station_names_dict.get(
                 (station_name, system_name)
             )
-            if not station and len(station_name) == 7 and station_name[3] == "-":
-                # print("Looking for station ignoring system")
+            if not station and is_carrier_name(station_name):
                 for station_key, value in self.ed_data.station_names_dict.items():
                     if station_key[0] == station_name:
                         station = self.ed_data.station_names_dict.get(station_key)
@@ -275,7 +317,6 @@ class LiveListener:
                         if system:
                             station.system_id = system.id
                             to_update_stations[station.id] = station
-                            # print(f'Changed the station {station} to system {system}')
                         else:
                             pass
                             # TODO: New systems not in db yet.
@@ -295,11 +336,19 @@ class LiveListener:
                         )
                     except Exception as err:
                         print("ERROR create_station:", err)
-                        raise err
                     if station:
                         self.ed_data.station_names_dict[
                             (station_name.lower(), system_name.lower())
                         ] = station
+                    else:
+                        print(f"Added station {station_name} to retry_stations.")
+                        retry_stations.append(
+                            RetryStation(
+                                system=system,
+                                station_name=station_name,
+                                extra={"listings": commodities},
+                            )
+                        )
 
             if station:
                 new_listings[station] = []

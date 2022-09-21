@@ -23,9 +23,7 @@ This website will allow you to explore the large quantities of data from the gam
 
 TODO:
 - Features:
-  - Search bars with auto-complete.
-  - Complete system page with link to EDDB.
-  - Complete station page with link to EDDB.
+  - Complete system page.
   - Easy copy-paste of object names.
   - Pin/Favorite commodities
   - Regular updates on important commodities

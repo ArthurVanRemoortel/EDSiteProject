@@ -33,36 +33,177 @@
         </h2>
 
         <article class="panel is-info">
-            <div class="tabs panel-heading is-boxed">
+            <div class="tabs panel-heading is-boxed mb-1">
                 <ul>
-                    <li class="is-active">
-                        <a>
+                    <li class="is-active" id="systemOverviewTabButton">
+                        <a onclick='return showSystemOverviewTab()'>
                             <span class="icon is-small"><i class="fas fa-circle-info" aria-hidden="true"></i></span>
                             <span>Overview</span>
                         </a>
                     </li>
-                    <li>
-                        <a>
-                            <span class="icon is-small"><i class="fas fa-people-group" aria-hidden="true"></i></span>
+                    <li id="systemFactionsTabButton">
+                        <a onclick='return showSystemFactionsTab()'>
+                            <span class="icon is-small"><i class="fa-solid fa-people-group" aria-hidden="true"></i></span>
                             <span>Factions</span>
                         </a>
                     </li>
-                    <li>
-                        <a>
-                            <span class="icon is-small"><i class="fa-solid fa-globe" aria-hidden="true"></i></span>
+                    <li id="systemBodiesTabButton">
+                        <a onclick='return showSystemBodiesTab()'>
+                            <span class="icon is-small"><i class="fas fa-shuttle-space" aria-hidden="true"></i></span>
                             <span>Bodies</span>
                         </a>
                     </li>
                 </ul>
             </div>
-            <div class="panel-block columns">
-                <div class="column column-fixed-10">
+
+            <div class="panel-block" id="summaryPanelBlock">
+                <div class="container mb-2" id="overviewTab">
+                    <div class="columns">
+                        <div class="column is-two-thirds">
+                            <div class="columns">
+                                <div class="column column-fixed-10">
+                                    <p class="mt-2">Coordinates</p>
+                                    <p class="mt-2">Distance to Sol</p>
+                                    <p class="mt-2">Distance to You</p>
+                                    <p class="mt-2">Needs Permit</p>
+                                    <p class="mt-2">Security</p>
+                                    <p class="mt-2">Traffic</p>
+                                    <p class="mt-2">Controlling Faction</p>
+                                </div>
+                                <div class="column">
+                                    <p class="mt-2">{{ system.pos_x|floatformat:0 }} <span class="unit ml-1 mr-1">/</span> {{ system.pos_y|floatformat:0 }} <span class="unit ml-1 mr-1">/</span> {{ system.pos_z|floatformat:0 }}</p>
+                                    <p class="mt-2">{{ system.distance_to_sol|floatformat:0 }} <span class="unit">Ly</span></p>
+                                    <p class="mt-2">{{ system|distance_to:current_system}} <span class="unit">Ly</span></p>
+                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">?</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="columns">
+                                <div class="column column-fixed-10 has-text-right">
+                                    <p class="mt-2">Population</p>
+                                    <p class="mt-2">Economy</p>
+                                    <p class="mt-2">Government</p>
+                                    <p class="mt-2">Allegiance</p>
+                                    <p class="mt-2">States</p>
+                                </div>
+                                <div class="column">
+                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">?</p>
+                                    <div class="buttons mt-2">
+                                        <button class="button is-primary is-small is-rounded" >Placeholder</button>
+                                        <button class="button is-primary is-small is-rounded">Placeholder</button>
+                                        <button class="button is-primary is-small is-rounded">Placeholder</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="column column-fixed-10">
+                <div class="container  mb-2" id="factionsTab">
+                    <div class="">
+                    </div>
                 </div>
-                <div class="column column-fixed-10">
+                <div class="container  mb-2" id="bodiesTab">
+                    <div class="">
+                    </div>
                 </div>
             </div>
         </article>
+
+        <article class="panel is-info mt-6">
+            <p class="panel-heading">
+                Stations
+            </p>
+            <div class="panel-block">
+                <table class="table is-hoverable is-fullwidth">
+                    <thead>
+                    <tr>
+                        <th class="commodity_th"><abbr title="Name">Name</abbr></th>
+                        <th><abbr title="Sell">Pad Size</abbr></th>
+                        <th><abbr title="Sell">Distance</abbr></th>
+                        <th><abbr title="Sell">Age</abbr></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for station in system.stations.all|sort:'ls_from_star' %}
+                        <tr>
+                            <th>
+                                {% with station_type=station.station_type.name %}
+                                    {% include 'EDSite/snippets/station_type.html' %}
+                                    <a href="/stations/{{ station.id }}"> {{ station.name }}</a>
+                                {% endwith %}
+                            </th>
+                            <th>{{ station.pad_size }}</th>
+                            <th> {{ station.ls_from_star }} <span class="unit">Ls</span></th>
+                            <th>{{ station.age_string }}</th>
+
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </article>
+
     </div>
 {% endblock %}
+
+{% block javascript %}
+    <script>
+
+        const summaryPanelBlock =  $('#summaryPanelBlock')
+
+        const overviewTab =  $('#overviewTab')
+        const factionsTab =  $('#factionsTab')
+        const bodiesTab =  $('#bodiesTab')
+
+        const overviewTabButton =  $('#systemOverviewTabButton')
+        const systemFactionsTabButton =  $('#systemFactionsTabButton')
+        const systemBodiesTabButton =  $('#systemBodiesTabButton')
+
+        let activeTab = overviewTab
+        let activeTabButton = overviewTabButton
+
+        function showSystemOverviewTab() {
+            if (activeTab === overviewTab) return
+            activeTab.hide()
+            overviewTab.show()
+            activeTabButton.removeClass("is-active")
+            overviewTabButton.addClass("is-active")
+            activeTab = overviewTab
+            activeTabButton = overviewTabButton
+        }
+
+        function showSystemFactionsTab() {
+            if (activeTab === bodiesTab) return
+            activeTab.hide()
+            bodiesTab.show()
+            activeTabButton.removeClass("is-active")
+            systemFactionsTabButton.addClass("is-active")
+            activeTab = bodiesTab
+            activeTabButton = systemFactionsTabButton
+        }
+
+        function showSystemBodiesTab() {
+            if (activeTab === factionsTab) return
+            activeTab.hide()
+            factionsTab.show()
+            activeTabButton.removeClass("is-active")
+            systemBodiesTabButton.addClass("is-active")
+            activeTab = factionsTab
+            activeTabButton = systemBodiesTabButton
+        }
+
+        $(document).ready(function () {
+            overviewTab.show()
+            bodiesTab.hide()
+            factionsTab.hide()
+        });
+
+    </script>
+{% endblock javascript %}

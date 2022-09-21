@@ -18,6 +18,18 @@ def index(indexable, i):
 
 
 @register.filter
+def round_number(number: float, decimals: int = 0):
+    if decimals == 0:
+        return int(number)
+    return round(number, decimals)
+
+
+@register.filter
+def sort(iterable, attr):
+    return sorted(iterable, key=lambda item: getattr(item, attr))
+
+
+@register.filter
 def external_url(obj, site):
     if isinstance(obj, System):
         if site == "inara":
