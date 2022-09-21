@@ -16,5 +16,5 @@ def main():
 
 
 if __name__ == "__main__":
-    Station.objects.filter(tradedangerous_id=None).delete()
+    # Station.objects.filter(tradedangerous_id=None).delete()
     main()

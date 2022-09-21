@@ -79,7 +79,9 @@ class RetryStation:
         print(f"Retrying {self.station_name}...")
         if self.retries <= 0:
             raise RetryException
-        existing_station = Station.objects.get(Q(system_id=self.system.id) & Q(name__icontains=self.station_name))
+        existing_station = Station.objects.filter(
+            Q(system_id=self.system.id) & Q(name__icontains=self.station_name)
+        ).first()
         if not existing_station:
             station = create_station(self.station_name, self.system, self.extra)
             self.retries -= 1
@@ -92,7 +94,9 @@ class RetryStation:
                 self.retries = 0
             return station
         else:
-            print(f"WARNING. RetryStation tried to create new station {self.station_name} but it already existed. Ignored it.")
+            print(
+                f"WARNING. RetryStation tried to create new station {self.station_name} but it already existed. Ignored it."
+            )
             self.retries = 0
             return existing_station
 
@@ -252,14 +256,25 @@ class LiveListener:
 
             retry_station: RetryStation
             for retry_station in retry_stations:
-                print(f"Retry: {retry_station}")
-                # TODO: Should not be hardcoded to 1 seconds.
+                # print(f"Retry: {retry_station}")
+                # TODO: Should not be hardcoded toj 1 seconds.
                 can_retry = retry_station.reduce_timeout(1.0)
                 if can_retry:
                     station: Station = retry_station.retry()
-                    if station and "commodities" in retry_station.extra:
-                        print(f"Adding listings to RetryStation: {station}")
-                        new_listings[station] = retry_station.extra["commodities"]
+                    if station:
+                        self.ed_data.station_names_dict[
+                            (station.name.lower(), station.system.name.lower())
+                        ] = station
+                        if "listings" in retry_station.extra:
+                            print(f"Adding listings to RetryStation: {station}")
+                            if station not in new_listings:
+                                new_listings[station] = []
+                            new_listings[station] = self.parse_listings(
+                                station,
+                                station.modified,
+                                retry_station.extra["listings"],
+                            )
+
             retry_stations[:] = [rs for rs in retry_stations if rs.retries > 0]
 
             if new_listings:
@@ -351,48 +366,55 @@ class LiveListener:
                         )
 
             if station:
-                new_listings[station] = []
-                for commodity_entry in commodities:
-                    commodity_name = commodity_entry["name"].lower()
-                    if (
-                        commodity_entry["sellPrice"] == 0
-                        and commodity_entry["buyPrice"] == 0
-                    ) or (
-                        commodity_entry["demand"] == 0 and commodity_entry["stock"] == 0
-                    ):
-                        continue
-                    commodity: Commodity = self.commodity_names.get(commodity_name)
-                    if not commodity:
-                        commodity = self.commodity_names.get(
-                            ALT_COMMODITY_NAMES.get(commodity_name)
-                        )
-                        if not commodity:
-                            fixed_name = ALT_COMMODITY_NAMES.get(commodity_name)
-                            if fixed_name:
-                                fixed_name += "s"
-                            commodity = self.commodity_names.get(fixed_name)
-                    if commodity:
-                        demand_price = commodity_entry["sellPrice"]
-                        supply_price = commodity_entry["buyPrice"]
-                        demand_units = commodity_entry["demand"]
-                        supply_units = commodity_entry["stock"]
-                        live_listing = LiveListing(
-                            commodity_id=commodity.id,
-                            commodity_tradedangerous_id=commodity.tradedangerous_id,
-                            station_id=station.id,
-                            station_tradedangerous_id=station.tradedangerous_id,
-                            demand_price=demand_price,
-                            demand_units=demand_units,
-                            supply_price=supply_price,
-                            supply_units=supply_units,
-                            modified=modified,
-                            from_live=1,
-                        )
-                        new_listings[station].append(live_listing)
-                    else:
-                        if commodity_name not in FAILED_COMMODITIES_LOG:
-                            FAILED_COMMODITIES_LOG.add(commodity_name)
-                            print("WARNING: Commodity not found: ", commodity_name)
+                if station not in new_listings:
+                    new_listings[station] = []
+                new_listings[station] = self.parse_listings(
+                    station, modified, commodities
+                )
+
+    def parse_listings(
+        self, station: Station, modified: datetime, listing_entries: [LiveListing]
+    ) -> [LiveListing]:
+        results = []
+        for commodity_entry in listing_entries:
+            commodity_name = commodity_entry["name"].lower()
+            if (
+                commodity_entry["sellPrice"] == 0 and commodity_entry["buyPrice"] == 0
+            ) or (commodity_entry["demand"] == 0 and commodity_entry["stock"] == 0):
+                continue
+            commodity: Commodity = self.commodity_names.get(commodity_name)
+            if not commodity:
+                commodity = self.commodity_names.get(
+                    ALT_COMMODITY_NAMES.get(commodity_name)
+                )
+                if not commodity:
+                    fixed_name = ALT_COMMODITY_NAMES.get(commodity_name)
+                    if fixed_name:
+                        fixed_name += "s"
+                    commodity = self.commodity_names.get(fixed_name)
+            if commodity:
+                demand_price = commodity_entry["sellPrice"]
+                supply_price = commodity_entry["buyPrice"]
+                demand_units = commodity_entry["demand"]
+                supply_units = commodity_entry["stock"]
+                live_listing = LiveListing(
+                    commodity_id=commodity.id,
+                    commodity_tradedangerous_id=commodity.tradedangerous_id,
+                    station_id=station.id,
+                    station_tradedangerous_id=station.tradedangerous_id,
+                    demand_price=demand_price,
+                    demand_units=demand_units,
+                    supply_price=supply_price,
+                    supply_units=supply_units,
+                    modified=modified,
+                    from_live=1,
+                )
+                results.append(live_listing)
+            else:
+                if commodity_name not in FAILED_COMMODITIES_LOG:
+                    FAILED_COMMODITIES_LOG.add(commodity_name)
+                    print("WARNING: Commodity not found: ", commodity_name)
+        return results
 
     def get_batch(self):
         while self.active:
