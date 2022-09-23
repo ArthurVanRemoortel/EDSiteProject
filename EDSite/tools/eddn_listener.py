@@ -431,7 +431,7 @@ class JournalProcessor(EDDNSchemaProcessor):
                             else False,
                         }
                     else:
-                        if system.controlling_faction != faction:
+                        if system_faction_name == faction_name and system.controlling_faction != faction:
                             logger.info(f"Updated controlling faction of {system} from {system.controlling_faction} to {faction}")
                             system.controlling_faction = faction
                             updated_systems.append(system)
