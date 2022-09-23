@@ -12,7 +12,7 @@ class EdsiteConfig(AppConfig):
     def ready(self):
         if 'runserver' not in sys.argv:
             return True
-        from EDSite.tools import seeders
+        import EDSite.tools.seeders as seeders
         from EDSiteProject import settings
         from EDSite.tools.ed_data import EDData
 
