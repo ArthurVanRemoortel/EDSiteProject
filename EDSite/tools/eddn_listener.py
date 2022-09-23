@@ -421,11 +421,6 @@ class JournalProcessor(EDDNSchemaProcessor):
                     )
                     faction_name: str = faction_dict["Name"]
                     faction = ed_data.EDData().cache_find_faction(faction_name)
-
-                    if faction_name == "NULL":
-                        logger.warning(f"Tried to create station but name was NULL: {faction_dict}")
-                        continue
-
                     if not faction:
                         # New system faction
                         new_factions[faction_dict["Name"]] = {
