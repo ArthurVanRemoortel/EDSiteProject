@@ -420,6 +420,10 @@ class JournalProcessor(EDDNSchemaProcessor):
                     faction_name: str = faction_dict["Name"]
                     faction = ed_data.EDData().cache_find_faction(faction_name)
 
+                    if faction_name == "NULL":
+                        logger.warning(f"Tried to create station but name was NULL: {faction_dict}")
+                        continue
+
                     if not faction:
                         # New system faction
                         new_factions[faction_dict["Name"]] = {
@@ -432,15 +436,15 @@ class JournalProcessor(EDDNSchemaProcessor):
                         }
                     else:
                         if system_faction_name == faction_name and system.controlling_faction != faction:
-                            logger.info(f"Updated controlling faction of {system} from {system.controlling_faction} to {faction}")
+                            # logger.info(f"Updated controlling faction of {system} from {system.controlling_faction} to {faction}")
                             system.controlling_faction = faction
                             updated_systems.append(system)
 
         if new_factions:
             for faction_data in new_factions.values():
                 controls_system = faction_data["system_faction"]
-                if ed_data.EDData().cache_find_faction(faction_data["name"]):
-                    logger.warning(f'Tried to create a duplicate faction {faction_data["name"]}. Ignoring it.')
+                if ed_data.EDData().cache_find_faction(faction_data["name"]) is not None:
+                    logger.warning(f'Tried to create a duplicate faction {faction_data["name"]}. ignored it.')
                     continue
                 faction = Faction(
                     name=faction_data["name"],
