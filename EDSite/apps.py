@@ -23,6 +23,7 @@ class EdsiteConfig(AppConfig):
         if settings.LIVE_UPDATER:
             # TODO: Move this.
             print("Starting the live listener.")
-            threading.Thread(target=EDData().start_live_listener, daemon=True).start()
+            EDData().start_live_listener(daemon=True)
+            # threading.Thread(target=EDData().start_live_listener, daemon=True).start()
         else:
             print("Not starting the live listener.")

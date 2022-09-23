@@ -754,10 +754,10 @@ class Faction(models.Model):
         System, on_delete=models.SET_NULL, related_name="factions", null=True
     )
     allegiance = models.ForeignKey(
-        Superpower, on_delete=models.CASCADE, related_name="factions"
+        Superpower, on_delete=models.CASCADE, related_name="factions", null=True
     )
     government = models.ForeignKey(
-        Government, on_delete=models.CASCADE, related_name="factions"
+        Government, on_delete=models.CASCADE, related_name="factions", null=True
     )
     is_player = models.BooleanField()
     tradedangerous_id = models.IntegerField(unique=True, null=True)

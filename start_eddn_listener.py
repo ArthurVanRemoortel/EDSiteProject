@@ -7,5 +7,5 @@ import EDSite.models as models
 
 
 if __name__ == "__main__":
-    # models.Faction.objects.all().delete()
-    EDData().start_live_listener(daemon=False)
+    models.Faction.objects.all().delete()
+    # EDData().start_live_listener(daemon=False)

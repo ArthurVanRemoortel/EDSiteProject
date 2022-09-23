@@ -462,6 +462,7 @@ class JournalProcessor(EDDNSchemaProcessor):
                     if controls_system and controls_system.controlling_faction_id != faction.id:
                         controls_system.controlling_faction = faction
                         updated_systems.append(controls_system)
+            print("LEN:", len(ed_data.EDData().faction_names_dict))
 
         if updated_systems:
             with transaction.atomic():
