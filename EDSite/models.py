@@ -7,15 +7,84 @@ from EDSite.helpers import (
     datetime_to_age_string,
 )
 from django.core.cache import cache
-import datetime
 from django.conf import settings
 from django.db import transaction
 from pprint import pprint
 from django.forms.models import model_to_dict
 from django.utils import timezone
+from enum import Enum, IntEnum
 import time
+import datetime
 
 IS_LIVE_MINUTES = 60
+
+
+class FactionHappiness(models.IntegerChoices):
+    DESPONDENT = 1, "Despondent"
+    UNHAPPY = 2, "Unhappy"
+    DISCONTENTED = 3, "Discontented"
+    HAPPY = 4, "Happy"
+    ELATED = 5, "Elated"
+
+
+class EconomyStates(models.IntegerChoices):
+    FAMINE = 1, "Famine"
+    BUST = 2, "Bust"
+    NONE = 3, "None"
+    BOOM = 4, "Boom"
+    INVESTMENT = 5, "Investment"
+
+
+class SecurityStates(models.IntegerChoices):
+    LOCKDOWN = 1, "Lockdown"
+    CIVIL_UNREST = 2, "Civil Unrest"
+    NONE = 3, "None"
+    CIVIL_LIBERTY = 4, "Civil Liberty"
+
+
+class States(models.TextChoices):
+    INCURSION = 1, "Incursion"
+    INFESTED = 2, "Infested"
+    BLIGHT = 3, "Blight"
+    DROUGHT = 4, "Drought"
+    OUTBREAK = 5, "Outbreak"
+    INFRASTRUCTURE_FAILURE = 6, "infrastructure Failure"
+    NATURAL_DISASTER = 7, "Natural Disaster"
+    REVOLUTION = 8, "Revolution"
+    COLD_WAR = 9, "Cold War"
+    TRADE_WAR = 10, "Trade War"
+    PIRATE_ATTACK = 11, "Pirate Attack"
+    TERRORIST_ATTACK = 12, "Terrorist Attack"
+    PUBLIC_HOLIDAY = 13, "Public Holiday"
+    TECHNOLOGICAL_LEAP = 14, "Technological Leap"
+    HISTORIC_EVENT = 15, "Historic Event"
+    COLONISATION = 16, "Colonisation"
+    WAR = 17, "War"
+    CIVIL_WAR = 18, "Civil War"
+    ELECTIONS = 19, "Elections"
+    RETREAT = 20, "Retreat"
+    EXPANSION = 21, "Expansion"
+
+
+class Superpowers(models.TextChoices):
+    EMPIRE = 1, "Empire"
+    INDEPENDENT = 2, "Independent"
+    ALLIANCE = 3, "Alliance"
+    FEDERATION = 4, "Federation"
+
+
+class Governments(models.TextChoices):
+    ANARCHY = 1, "Anarchy"
+    COMMUNISM = 2, "Communism"
+    CONFEDERACY = 3, "Confederacy"
+    COOPERATIVE = 4, "Cooperative"
+    CORPORATE = 5, "Corporate"
+    DEMOCRACY = 6, "Democracy"
+    DICTATORSHIP = 7, "Dictatorship"
+    FEUDAL = 8, "Feudal"
+    PATRONAGE = 9, "Patronage"
+    PRISON_COLONY = 10, "Prison Colony"
+    THEOCRACY = 11, "Theocracy"
 
 
 class CommodityCategory(models.Model):
@@ -191,13 +260,20 @@ class System(models.Model):
     pos_x = models.FloatField()
     pos_y = models.FloatField()
     pos_z = models.FloatField()
+    population = models.BigIntegerField(null=True)
+    government = models.ForeignKey(
+        'Government', on_delete=models.SET_NULL, related_name="systems", null=True
+    )
+    allegiance = models.ForeignKey(
+        'Superpower', on_delete=models.SET_NULL, related_name="systems", null=True
+    )
+    controlling_faction = models.ForeignKey(
+        "Faction", on_delete=models.SET_NULL, related_name="controls", null=True
+    )
 
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
 
     class Meta:
-        index_together = [
-            ("pos_x", "pos_y", "pos_z"),
-        ]
         ordering = ["-id"]
 
     def distance_to(self, other: "System"):
@@ -221,8 +297,6 @@ class Station(models.Model):
     name = models.CharField(max_length=100)
     ls_from_star = models.IntegerField()
     pad_size = models.CharField(max_length=1)
-    # item_count = models.IntegerField()
-    # data_age_days = models.FloatField()
     modified = models.DateTimeField(null=True)
     market = models.BooleanField()
     black_market = models.BooleanField()
@@ -234,7 +308,6 @@ class Station(models.Model):
     planetary = models.BooleanField()
     fleet = models.BooleanField()  # TODO: Maybe index?
     odyssey = models.BooleanField()
-
     system = models.ForeignKey(
         System, on_delete=models.CASCADE, related_name="stations"
     )
@@ -319,16 +392,8 @@ class Station(models.Model):
                 # It's a new listing.
                 new_listings.append(new_ll)
 
-        # print('To Update: ', updated_listings.keys())
         if updated_listings:
-            # print("Updating:", len(updated_listings))
             with transaction.atomic():
-                #     for updated_ll in updated_listings:
-                #         # updated_ll.save()
-                #         LiveListing.objects.select_for_update().filter(id=updated_ll.id).update(
-                #             **{key: value for key, value in model_to_dict(updated_ll).items() if
-                #                key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified',
-                #                        'from_live']})
                 to_update = LiveListing.objects.select_for_update().filter(
                     pk__in=sorted(updated_listings.keys())
                 )
@@ -348,9 +413,6 @@ class Station(models.Model):
                             ),
                         )
                     to_update_ll.save()
-                    # print("Updated: ", to_update_ll.id, to_update_ll)
-                    # for key, value in model_to_dict(updated_ll).items() if key in ['demand_price', 'demand_units', 'supply_price', 'supply_units', 'modified', 'from_live']
-
         if updated_listings:
             LiveListing.objects.filter(
                 Q(station_id=self.id)
@@ -364,7 +426,7 @@ class Station(models.Model):
             HistoricListing.objects.bulk_create(new_historic_listings)
 
     @property
-    def services_list(self):
+    def services_lists(self):
         enabled = []
         disabled = []
         for is_true, service_string in [
@@ -384,11 +446,11 @@ class Station(models.Model):
 
     @property
     def enabled_services(self):
-        return self.services_list[0]
+        return self.services_lists[0]
 
     @property
     def disabled_services(self):
-        return self.services_list[1]
+        return self.services_lists[1]
 
     @property
     def is_live(self):
@@ -644,3 +706,61 @@ class CarrierMission(models.Model):
     @property
     def is_live(self):
         return self.carrier.is_live  # or self.station.is_live
+
+
+class Superpower(models.Model):
+    """
+    Galactic superpowers. e.g empire, ...
+    """
+
+    name = models.CharField(max_length=100, choices=Superpowers.choices)
+
+
+class Government(models.Model):
+    """
+    Government types like Confederacy, Communism, Corporate, ...
+    """
+
+    name = models.CharField(max_length=100, choices=Governments.choices)
+
+
+class State(models.Model):
+    name = models.CharField(max_length=100, choices=States.choices)
+
+
+class LocalFaction(models.Model):
+    faction = models.ForeignKey(
+        "Faction", on_delete=models.CASCADE, related_name="states"
+    )
+    system = models.ForeignKey(
+        System, on_delete=models.CASCADE, related_name="faction_states"
+    )
+    states = models.ManyToManyField(State, related_name="factions")
+    recovering_states = models.ManyToManyField(
+        State, related_name="recovering_factions"
+    )
+    pending_states = models.ManyToManyField(State, related_name="pending_factions")
+    happiness = models.PositiveSmallIntegerField(choices=FactionHappiness.choices)
+    influence = models.FloatField()
+    modified = models.DateTimeField(null=True)
+
+    def __str__(self):
+        return f"{self.faction.name}"
+
+
+class Faction(models.Model):
+    name = models.CharField(max_length=100)
+    home_system = models.ForeignKey(
+        System, on_delete=models.SET_NULL, related_name="factions", null=True
+    )
+    allegiance = models.ForeignKey(
+        Superpower, on_delete=models.CASCADE, related_name="factions"
+    )
+    government = models.ForeignKey(
+        Government, on_delete=models.CASCADE, related_name="factions"
+    )
+    is_player = models.BooleanField()
+    tradedangerous_id = models.IntegerField(unique=True, null=True)
+
+    def __str__(self):
+        return f"{self.name}" + "" if not self.is_player else f" (Player) "

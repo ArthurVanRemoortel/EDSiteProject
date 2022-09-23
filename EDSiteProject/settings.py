@@ -196,29 +196,37 @@ REST_FRAMEWORK = {
 DEBUG_PROPAGATE_EXCEPTIONS = True
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://my-elite-site.herokuapp.com",
     "http://edsite.arthurvanremoortel.me",
     "https://edsite.arthurvanremoortel.me",
 ]
 
-# LOGGING = { // Database logging
-#     'version': 1,
-#     'filters': {
-#         'require_debug_true': {
-#             '()': 'django.utils.log.RequireDebugTrue',
-#         }
-#     },
-#     'handlers': {
-#         'console': {
-#             'level': 'DEBUG',
-#             'filters': ['require_debug_true'],
-#             'class': 'logging.StreamHandler',
-#         }
-#     },
-#     'loggers': {
-#         'django.db.backends': {
-#             'level': 'DEBUG',
-#             'handlers': ['console'],
-#         }
-#     }
-# }
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "simple": {"format": "%(levelname)s %(asctime)s - %(message)s"},
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(name)s.%(funcName)s:%(lineno)s - %(message)s"
+        },
+    },
+    "handlers": {
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": BASE_DIR / "info.log",
+            "formatter": "simple",
+        },
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["file", "console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+    },
+}

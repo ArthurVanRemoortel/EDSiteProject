@@ -37,6 +37,19 @@ def execute_wrapper(*args, **kwargs):
 django.db.backends.utils.CursorWrapper.execute = execute_wrapper
 
 
+def get_alt_commodity_names() -> {str: str}:
+    edcd_source = "https://raw.githubusercontent.com/EDCD/FDevIDs/master/commodity.csv"
+    edcd_csv = request.urlopen(edcd_source)
+    names = {}
+    for line in iter(csv.DictReader(codecs.iterdecode(edcd_csv, "utf-8"))):
+        try:
+            names[line["symbol"].lower()] = (
+                line["name"].lower().replace(" ", "").replace("-", "")
+            )
+        except KeyError as e:
+            ...
+    return names
+
 class SingletonMeta(type):
     _instances = {}
 
@@ -60,6 +73,10 @@ class StationType(Enum):
     FLEET = "FC"
     PLANETARY = "P"
     STATION = "S"
+
+
+def capitalize_string(s):
+    return " ".join([word.capitalize() for word in s.split(" ")])
 
 
 def is_carrier_name(name: str) -> bool:
