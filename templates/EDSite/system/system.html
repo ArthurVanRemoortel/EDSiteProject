@@ -77,7 +77,7 @@
                                     <p class="mt-2">?</p>
                                     <p class="mt-2">?</p>
                                     <p class="mt-2">?</p>
-                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">{{ system.controlling_faction.name }}</p>
                                 </div>
                             </div>
                         </div>
@@ -91,10 +91,10 @@
                                     <p class="mt-2">States</p>
                                 </div>
                                 <div class="column">
+                                    <p class="mt-2">{% if system.population %}{{ system.population }} <span class="unit">People</span>{% else %} ? {% endif %}</p>
                                     <p class="mt-2">?</p>
-                                    <p class="mt-2">?</p>
-                                    <p class="mt-2">?</p>
-                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">{% if system.government %}{{ system.government.name }}{% else %} ? {% endif %}</p>
+                                    <p class="mt-2">{% if system.allegiance %}{{ system.allegiance.name }}{% else %} ? {% endif %}</p>
                                     <div class="buttons mt-2">
                                         <button class="button is-primary is-small is-rounded" >Placeholder</button>
                                         <button class="button is-primary is-small is-rounded">Placeholder</button>

@@ -7,6 +7,7 @@ import zlib
 from collections import defaultdict, deque, namedtuple
 import datetime
 from pprint import pprint
+from typing import Optional
 
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.models import model_to_dict
@@ -36,6 +37,7 @@ from EDSite.helpers import (
     chunks_no_overlap,
     update_item_dict,
 )
+from EDSite.tools.eddn_listener import EDDNListener
 from EDSiteProject import settings
 
 try:
@@ -47,8 +49,8 @@ try:
         CommodityCategory,
         LiveListing,
         HistoricListing,
-        CarrierMission,
-    )
+        CarrierMission, Faction, Government, Superpower,
+)
 except ImproperlyConfigured:
     import django
 
@@ -65,7 +67,6 @@ except ImproperlyConfigured:
         CarrierMission,
     )
 from django.core.cache import cache
-from EDSite.tools.data_listener import LiveListener
 
 
 class EDData(metaclass=SingletonMeta):
@@ -78,17 +79,10 @@ class EDData(metaclass=SingletonMeta):
         self.last_update = make_timezone_aware(
             datetime.datetime.now() - datetime.timedelta(days=4)
         )
-        # self.commodity_names = {c.name.lower().replace(' ', ''): c for c in Commodity.objects.only('name').all()}
-        # self.system_names = {system.name.lower(): system for system in System.objects.all()}
-        # self.station_names_dict = {(station.name.lower(), station.system.name.lower()): station for station in Station.objects.select_related('system').all()}
         self.live_listener = None
-        # threading.Thread(target=self.update_cache).start()
-        print("Created new EDData object.")
 
-    def start_live_listener(self):
-        self.live_listener = LiveListener(ed_data=self)
         self.commodity_names = {
-            c.name.lower().replace(" ", ""): c
+            c.name.lower().replace(" ", "").replace("-", ""): c
             for c in Commodity.objects.only("name").all()
         }
         self.system_names = {
@@ -98,7 +92,38 @@ class EDData(metaclass=SingletonMeta):
             (station.name.lower(), station.system.name.lower()): station
             for station in Station.objects.select_related("system").all()
         }
-        self.live_listener.start_background()
+
+        self.faction_names_dict = {
+            faction.name.lower(): faction for faction in Faction.objects.all()
+        }
+        self.government_names_dict = {
+            government.name.lower().replace(" ", ""): government for government in Government.objects.all()
+        }
+        self.superpower_names_dict = {
+            power.name.lower(): power for power in Superpower.objects.all()
+        }
+
+        print("Created new EDData object")
+
+    def cache_find_system(self, name: str) -> Optional[System]:
+        return self.system_names.get(name.lower())
+
+    def cache_find_government(self, name: str) -> Optional[Government]:
+        return self.government_names_dict.get(name.lower())
+
+    def cache_find_superpower(self, name: str) -> Optional[Government]:
+        return self.superpower_names_dict.get(name.lower())
+
+    def cache_find_faction(self, name: str) -> Optional[Government]:
+        return self.faction_names_dict.get(name.lower())
+
+    def cache_set_faction(self, faction: Faction):
+        self.faction_names_dict[faction.name.lower()] = faction
+
+
+    def start_live_listener(self, daemon=True):
+        self.live_listener = EDDNListener()
+        self.live_listener.start_background(daemon=daemon)
 
     @property
     def tdb(self, *args) -> tradedb.TradeDB:
@@ -568,10 +593,8 @@ class EDData(metaclass=SingletonMeta):
                             station_tradedangerous_id=station_td_id,
                             demand_price=demand_price,
                             demand_units=demand_units,
-                            # demand_level=demand_level,
                             supply_price=supply_price,
                             supply_units=supply_units,
-                            # supply_level=supply_level,
                             modified=modified,
                             from_live=from_live,
                         )

@@ -1,4 +1,5 @@
 import datetime
+import sys
 import threading
 import time
 from pprint import pprint
@@ -35,23 +36,19 @@ from EDSite.models import (
 )
 from EDSiteProject import settings
 
-try:
-    USER_CARRIER = ("Normandy SR-404", Station.objects.get(pk=199781))  # K7Q-BQL
-    CURRENT_SYSTEM = USER_CARRIER[1].system
-except Exception as e:
-    print(e)
-    USER_CARRIER = ("Normandy SR-404", Station.objects.get(pk=2))
-    CURRENT_SYSTEM = USER_CARRIER[1].system
-# USER_CARRIER = (None, None)
-# CURRENT_SYSTEM = None
+if 'runserver' in sys.argv:
+    try:
+        USER_CARRIER = ("Normandy SR-404", Station.objects.get(pk=199781))  # K7Q-BQL
+        CURRENT_SYSTEM = USER_CARRIER[1].system
+    except Exception as e:
+        print("WARNING: Did not find USER_CARRIER: Using a random one instead.")
+        USER_CARRIER = ("Normandy SR-404", Station.objects.get(name='K7Q-BQL'))
+        CURRENT_SYSTEM = USER_CARRIER[1].system
 
-
-if settings.LIVE_UPDATER:
-    # TODO: Move this.
-    print("Starting the live listener.")
-    threading.Thread(target=EDData().start_live_listener, daemon=True).start()
 else:
-    print("Not starting the live listener.")
+    USER_CARRIER = (None, None)
+    CURRENT_SYSTEM = None
+
 
 
 def logged_in_user(request):
