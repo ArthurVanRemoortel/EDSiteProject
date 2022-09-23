@@ -352,6 +352,8 @@ class CommodityProcessor(EDDNSchemaProcessor):
 
 
 class JournalProcessor(EDDNSchemaProcessor):
+    max_batch_size = 20
+
     def process(self):
         messages = self.get_message_batch()
         updated_stations = []
@@ -441,9 +443,12 @@ class JournalProcessor(EDDNSchemaProcessor):
                             updated_systems.append(system)
 
         if new_factions:
+            t0 = time.time()
             for faction_data in new_factions.values():
                 controls_system = faction_data["system_faction"]
-                if ed_data.EDData().cache_find_faction(faction_data["name"]) is not None:
+                existing_faction = ed_data.EDData().cache_find_faction(faction_data["name"])
+                # print(faction_data['name'], existing_faction)
+                if existing_faction:
                     logger.warning(f'Tried to create a duplicate faction {faction_data["name"]}. ignored it.')
                     continue
                 faction = Faction(
@@ -454,11 +459,14 @@ class JournalProcessor(EDDNSchemaProcessor):
                     tradedangerous_id=None,
                 )
                 faction.save()
-                ed_data.EDData().cache_set_faction(faction)
-                # logger.info(f'Created new faction: {faction}')
-                if controls_system and controls_system.controlling_faction_id != faction.id:
-                    controls_system.controlling_faction = faction
-                    updated_systems.append(controls_system)
+                created = True
+                if created:
+                    # faction.save()
+                    ed_data.EDData().cache_set_faction(faction)
+                    # logger.info(f'Created new faction: {faction}')
+                    if controls_system and controls_system.controlling_faction_id != faction.id:
+                        controls_system.controlling_faction = faction
+                        updated_systems.append(controls_system)
 
         if updated_systems:
             with transaction.atomic():
