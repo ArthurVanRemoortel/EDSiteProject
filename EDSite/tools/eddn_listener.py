@@ -430,12 +430,18 @@ class JournalProcessor(EDDNSchemaProcessor):
                             if system_faction_name == faction_name
                             else False,
                         }
-                    # else:
-                    #     logger.info(f"Faction already exists: {faction}")
+                    else:
+                        if system.controlling_faction != faction:
+                            logger.info(f"Updated controlling faction of {system} from {system.controlling_faction} to {faction}")
+                            system.controlling_faction = faction
+                            updated_systems.append(system)
 
         if new_factions:
             for faction_data in new_factions.values():
                 controls_system = faction_data["system_faction"]
+                if ed_data.EDData().cache_find_faction(faction_data["name"]):
+                    logger.warning(f'Tried to create a duplicate faction {faction_data["name"]}. Ignoring it.')
+                    continue
                 faction = Faction(
                     name=faction_data["name"],
                     allegiance=faction_data["allegiance"],
@@ -446,7 +452,6 @@ class JournalProcessor(EDDNSchemaProcessor):
                 faction.save()
                 ed_data.EDData().cache_set_faction(faction)
                 # logger.info(f'Created new faction: {faction}')
-                # TODO: If controling faction is never set if it was not discovered in a system where it controls
                 if controls_system and controls_system.controlling_faction_id != faction.id:
                     controls_system.controlling_faction = faction
                     updated_systems.append(controls_system)
