@@ -441,9 +441,7 @@ class JournalProcessor(EDDNSchemaProcessor):
             t0 = time.time()
             for faction_data in new_factions.values():
                 controls_system = faction_data["system_faction"]
-                existing_faction = ed_data.EDData().cache_find_faction(faction_data["name"])
-                # print(faction_data['name'], existing_faction)
-                if existing_faction:
+                if ed_data.EDData().cache_find_faction(faction_data["name"]):
                     logger.warning(f'Tried to create a duplicate faction {faction_data["name"]}. ignored it.')
                     continue
                 faction = Faction(
@@ -462,7 +460,7 @@ class JournalProcessor(EDDNSchemaProcessor):
                     if controls_system and controls_system.controlling_faction_id != faction.id:
                         controls_system.controlling_faction = faction
                         updated_systems.append(controls_system)
-            print("LEN:", len(ed_data.EDData().faction_names_dict))
+            # print("LEN:", len(ed_data.EDData().faction_names_dict))
 
         if updated_systems:
             with transaction.atomic():
