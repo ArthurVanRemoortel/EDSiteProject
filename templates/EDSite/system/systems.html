@@ -103,7 +103,7 @@
                                 <a href="/systems/{{ system.id }}"> {{ system.name }}</a>
                             </th>
                             <th> {{ system.stations.count }} </th>
-                            <th> {% if system.population %}{{ system.population }} <span class="unit">People</span>{% else %} ? {% endif %} </th>
+                            <th> {% if system.population %}{{ system.population }} {% else %} ? {% endif %} </th>
                             {% if reference_distances %}
                                 <th> {{ reference_distances|get_value:system.id }} <span class="unit">Ly</span></th>
                             {% else %}

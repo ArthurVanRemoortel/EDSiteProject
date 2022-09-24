@@ -6,6 +6,7 @@ try:
 except ImproperlyConfigured:
     import django
     import os
+
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "EDSiteProject.settings")
     django.setup()
     from EDSite import models
@@ -17,7 +18,9 @@ def createSuperpowers():
         return
     with transaction.atomic():
         for integer, name in models.Superpowers.choices:
-            obj, created = models.Superpower.objects.get_or_create(id=integer, name=name)
+            obj, created = models.Superpower.objects.get_or_create(
+                id=integer, name=name
+            )
             if created:
                 print(f"Seeded {obj}")
 
@@ -28,7 +31,9 @@ def createGovernments():
         return
     with transaction.atomic():
         for integer, name in models.Governments.choices:
-            obj, created = models.Government.objects.get_or_create(id=integer, name=name)
+            obj, created = models.Government.objects.get_or_create(
+                id=integer, name=name
+            )
             if created:
                 print(f"Seeded {obj}")
 
@@ -42,3 +47,22 @@ def createStates():
             obj, created = models.State.objects.get_or_create(id=integer, name=name)
             if created:
                 print(f"Seeded {obj}")
+
+
+def createEconomyStates():
+    if models.EconomyState.objects.count() == len(models.EconomyStates):
+        print("SEEDER: EconomyStates already seeded.")
+        return
+    with transaction.atomic():
+        for integer, name in models.EconomyState.choices:
+            obj, created = models.EconomyState.objects.get_or_create(
+                id=integer, name=name
+            )
+            if created:
+                print(f"Seeded {obj}")
+
+
+def seedAll():
+    createSuperpowers()
+    createGovernments()
+    createStates()

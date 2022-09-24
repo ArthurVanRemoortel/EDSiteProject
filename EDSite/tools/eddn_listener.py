@@ -42,7 +42,6 @@ class RetryStation:
         return self.remaining_timeout <= 0
 
     def retry(self) -> Optional[Station]:
-        logger.info(f"Retrying {self.station_name}...")
         if self.retries <= 0:
             raise Exception(
                 f"Cannot retry create station {self.station_name} if retries <= 0"
@@ -55,9 +54,11 @@ class RetryStation:
             self.retries -= 1
             if not station:
                 self.remaining_timeout = self.timeout
-                logger.warning(
-                    f"Retried creating {self.station_name} but failed again. {self.retries} retries remaining."
-                )
+                if self.retries == 1:
+                    self.remaining_timeout *= 2
+                # logger.warning(
+                #     f"Retried creating {self.station_name} but failed again. {self.retries} retries remaining."
+                # )
             else:
                 self.retries = 0
             return station
@@ -268,6 +269,11 @@ class CommodityProcessor(EDDNSchemaProcessor):
             system, station = determine_station_and_system(
                 station_name=station_name, system_name=system_name
             )
+
+            if not system:
+                logger.warning(f"System {system_name} for {station_name} is not known.")
+                continue
+
             if (
                 is_carrier_name(station_name)
                 and (station and system)
@@ -275,18 +281,13 @@ class CommodityProcessor(EDDNSchemaProcessor):
             ):
                 station.system_id = system.id
                 station.modified = modified
-                logger.info(f"Moved carrier {station} to {system}")
+                # logger.info(f"Moved carrier {station} to {system}")
                 to_update_stations[station_name] = station
 
             if not station:
-                logger.warning(
+                logger.info(
                     f"Station not found: {(station_name, system_name)}. Will create a temporary one."
                 )
-                if not system:
-                    logger.info(
-                        f"System {system_name} for {station_name} is not known."
-                    )
-                    continue
                 station = create_station(
                     station_name, system, extra={"listings": commodities}
                 )
@@ -315,12 +316,12 @@ class CommodityProcessor(EDDNSchemaProcessor):
             if can_retry:
                 station: Station = retry_station.retry()
                 if station:
-                    logger.info(f"RetryStation succeeded: {station}")
+                    # logger.info(f"RetryStation succeeded: {station}")
                     ed_data.EDData().station_names_dict[
                         (station.name.lower(), station.system.name.lower())
                     ] = station
                     if "listings" in retry_station.extra:
-                        logger.info(f"Adding listings to RetryStation: {station}")
+                        # logger.info(f"Adding listings to RetryStation: {station}")
                         if station not in new_listings:
                             new_listings[station] = []
                         new_listings[station] = self.parse_listings(
@@ -376,6 +377,7 @@ class JournalProcessor(EDDNSchemaProcessor):
             population = data.get("Population")
             body_type = data.get("BodyType")
             system_name = data.get("StarSystem")
+            system_security = data.get("SystemSecurity")
             system: Optional[System] = ed_data.EDData().cache_find_system(system_name)
             if not system:
                 # logger.warning(f"System {system_name} was not found. Population={population}")
@@ -383,6 +385,9 @@ class JournalProcessor(EDDNSchemaProcessor):
 
             if body_type not in ["Star", "Station"]:
                 continue
+
+            # pprint(data)
+            # print("-------" * 10)
 
             if body_type == "Star" and (population == 0 or population is None):
                 logger.warning(
@@ -406,7 +411,10 @@ class JournalProcessor(EDDNSchemaProcessor):
             system_allegiance = ed_data.EDData().cache_find_superpower(
                 data["SystemAllegiance"]
             )
-            if system.allegiance != system_allegiance or system.government != system_government:
+            if (
+                system.allegiance != system_allegiance
+                or system.government != system_government
+            ):
                 system.allegiance = system_allegiance
                 system.government = system_government
                 updated_systems.append(system)
@@ -432,7 +440,10 @@ class JournalProcessor(EDDNSchemaProcessor):
                             else False,
                         }
                     else:
-                        if system_faction_name == faction_name and system.controlling_faction != faction:
+                        if (
+                            system_faction_name == faction_name
+                            and system.controlling_faction != faction
+                        ):
                             # logger.info(f"Updated controlling faction of {system} from {system.controlling_faction} to {faction}")
                             system.controlling_faction = faction
                             updated_systems.append(system)
@@ -442,7 +453,9 @@ class JournalProcessor(EDDNSchemaProcessor):
             for faction_data in new_factions.values():
                 controls_system = faction_data["system_faction"]
                 if ed_data.EDData().cache_find_faction(faction_data["name"]):
-                    logger.warning(f'Tried to create a duplicate faction {faction_data["name"]}. ignored it.')
+                    logger.warning(
+                        f'Tried to create a duplicate faction {faction_data["name"]}. ignored it.'
+                    )
                     continue
                 faction = Faction(
                     name=faction_data["name"],
@@ -457,7 +470,10 @@ class JournalProcessor(EDDNSchemaProcessor):
                     # faction.save()
                     ed_data.EDData().cache_set_faction(faction)
                     # logger.info(f'Created new faction: {faction}')
-                    if controls_system and controls_system.controlling_faction_id != faction.id:
+                    if (
+                        controls_system
+                        and controls_system.controlling_faction_id != faction.id
+                    ):
                         controls_system.controlling_faction = faction
                         updated_systems.append(controls_system)
             # print("LEN:", len(ed_data.EDData().faction_names_dict))
@@ -466,10 +482,12 @@ class JournalProcessor(EDDNSchemaProcessor):
             with transaction.atomic():
                 for system in updated_systems:
                     System.objects.select_for_update().filter(pk=system.id).update(
-                        allegiance=system.allegiance, government=system.government, controlling_faction=system.controlling_faction, population=system.population
+                        allegiance=system.allegiance,
+                        government=system.government,
+                        controlling_faction=system.controlling_faction,
+                        population=system.population,
                     )
                     # logger.info(f'updated system demographics: {system}')
-
 
 
 class EDDNListener:

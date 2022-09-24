@@ -42,6 +42,14 @@ class SecurityStates(models.IntegerChoices):
     CIVIL_LIBERTY = 4, "Civil Liberty"
 
 
+class SystemSecurities(models.IntegerChoices):
+    LOW = 1, "Low"
+    MEDIUM = 2, "Medium"
+    HIGH = 3, "High"
+    ANARCHY = 4, "Anarchy"
+    LAWLESS = 5, "Lawless"
+
+
 class States(models.TextChoices):
     INCURSION = 1, "Incursion"
     INFESTED = 2, "Infested"
@@ -262,10 +270,10 @@ class System(models.Model):
     pos_z = models.FloatField()
     population = models.BigIntegerField(null=True)
     government = models.ForeignKey(
-        'Government', on_delete=models.SET_NULL, related_name="systems", null=True
+        "Government", on_delete=models.SET_NULL, related_name="systems", null=True
     )
     allegiance = models.ForeignKey(
-        'Superpower', on_delete=models.SET_NULL, related_name="systems", null=True
+        "Superpower", on_delete=models.SET_NULL, related_name="systems", null=True
     )
     controlling_faction = models.ForeignKey(
         "Faction", on_delete=models.SET_NULL, related_name="controls", null=True
@@ -495,14 +503,6 @@ class LiveListing(models.Model):
     def is_high_demand(self, minimum=200):
         return self.demand_units > minimum
 
-    # def is_better_than(self, other: 'LiveListing', mode: str) -> bool:
-    #     if mode == "supply":
-    #         return self.supply_price <= other.supply_price
-    #     elif mode == "demand":
-    #         return self.demand_price >= other.demand_price
-    #     else:
-    #         return False
-
     def cache_if_better(self) -> (bool, bool):
         """
         TODO: This is a mess.
@@ -715,6 +715,9 @@ class Superpower(models.Model):
 
     name = models.CharField(max_length=100, choices=Superpowers.choices)
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 class Government(models.Model):
     """
@@ -723,9 +726,29 @@ class Government(models.Model):
 
     name = models.CharField(max_length=100, choices=Governments.choices)
 
+    def __str__(self):
+        return f"{self.name}"
+
 
 class State(models.Model):
     name = models.CharField(max_length=100, choices=States.choices)
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class EconomyState(models.Model):
+    name = models.CharField(max_length=100, choices=EconomyStates.choices)
+
+    def __str__(self):
+        return f"{self.name}"
+
+
+class SecurityState(models.Model):
+    name = models.CharField(max_length=100, choices=SecurityStates.choices)
+
+    def __str__(self):
+        return f"{self.name}"
 
 
 class LocalFaction(models.Model):
