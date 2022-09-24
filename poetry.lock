@@ -1145,6 +1145,10 @@ tradedangerous = [
     {file = "tradedangerous-10.13.7-py3-none-any.whl", hash = "sha256:277c2ffcdf80037281a7792ea2c1b8e5b41f462e39cd008e689aabdd9f93c41a"},
     {file = "tradedangerous-10.13.7.tar.gz", hash = "sha256:a4e378317736f6664e5e7ce1e2c7a67df2a306bed785c05ef32cfc36a8e44a4a"},
 ]
+typing-extensions = [
+    {file = "typing_extensions-4.3.0-py3-none-any.whl", hash = "sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02"},
+    {file = "typing_extensions-4.3.0.tar.gz", hash = "sha256:e6d2677a32f47fc7eb2795db1dd15c1f34eff616bcaf2cfb5e997f854fa1c4a6"},
+]
 tzdata = [
     {file = "tzdata-2022.2-py2.py3-none-any.whl", hash = "sha256:c3119520447d68ef3eb8187a55a4f44fa455f30eb1b4238fa5691ba094f2b05b"},
     {file = "tzdata-2022.2.tar.gz", hash = "sha256:21f4f0d7241572efa7f7a4fdabb052e61b55dc48274e6842697ccdf5253e5451"},
