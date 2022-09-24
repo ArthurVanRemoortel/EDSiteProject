@@ -5,6 +5,7 @@ from EDSite.helpers import (
     difference_percent,
     is_listing_better_than,
     datetime_to_age_string,
+    ParsableChoices
 )
 from django.core.cache import cache
 from django.conf import settings
@@ -15,11 +16,12 @@ from django.utils import timezone
 from enum import Enum, IntEnum
 import time
 import datetime
+from typing import Optional
 
 IS_LIVE_MINUTES = 60
 
 
-class FactionHappiness(models.IntegerChoices):
+class FactionHappiness(models.IntegerChoices, ParsableChoices):
     DESPONDENT = 1, "Despondent"
     UNHAPPY = 2, "Unhappy"
     DISCONTENTED = 3, "Discontented"
@@ -27,7 +29,7 @@ class FactionHappiness(models.IntegerChoices):
     ELATED = 5, "Elated"
 
 
-class EconomyStates(models.IntegerChoices):
+class EconomyStates(models.IntegerChoices, ParsableChoices):
     FAMINE = 1, "Famine"
     BUST = 2, "Bust"
     NONE = 3, "None"
@@ -35,14 +37,14 @@ class EconomyStates(models.IntegerChoices):
     INVESTMENT = 5, "Investment"
 
 
-class SecurityStates(models.IntegerChoices):
+class SecurityStates(models.IntegerChoices, ParsableChoices):
     LOCKDOWN = 1, "Lockdown"
     CIVIL_UNREST = 2, "Civil Unrest"
     NONE = 3, "None"
     CIVIL_LIBERTY = 4, "Civil Liberty"
 
 
-class SystemSecurities(models.IntegerChoices):
+class SystemSecurities(models.IntegerChoices, ParsableChoices):
     LOW = 1, "Low"
     MEDIUM = 2, "Medium"
     HIGH = 3, "High"
@@ -74,14 +76,14 @@ class States(models.TextChoices):
     EXPANSION = 21, "Expansion"
 
 
-class Superpowers(models.TextChoices):
+class Superpowers(models.IntegerChoices, ParsableChoices):
     EMPIRE = 1, "Empire"
     INDEPENDENT = 2, "Independent"
     ALLIANCE = 3, "Alliance"
     FEDERATION = 4, "Federation"
 
 
-class Governments(models.TextChoices):
+class Governments(models.IntegerChoices, ParsableChoices):
     ANARCHY = 1, "Anarchy"
     COMMUNISM = 2, "Communism"
     CONFEDERACY = 3, "Confederacy"
@@ -269,15 +271,14 @@ class System(models.Model):
     pos_y = models.FloatField()
     pos_z = models.FloatField()
     population = models.BigIntegerField(null=True)
-    government = models.ForeignKey(
-        "Government", on_delete=models.SET_NULL, related_name="systems", null=True
-    )
-    allegiance = models.ForeignKey(
-        "Superpower", on_delete=models.SET_NULL, related_name="systems", null=True
-    )
+    government = models.PositiveSmallIntegerField(choices=Governments.choices, null=True)
+    allegiance = models.PositiveSmallIntegerField(choices=Superpowers.choices, null=True)
+
     controlling_faction = models.ForeignKey(
         "Faction", on_delete=models.SET_NULL, related_name="controls", null=True
     )
+    # security = models.PositiveSmallIntegerField(choices=SecurityStates.choices, null=True)
+    security = models.PositiveSmallIntegerField(choices=SystemSecurities.choices, null=True)
 
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
 
@@ -708,28 +709,6 @@ class CarrierMission(models.Model):
         return self.carrier.is_live  # or self.station.is_live
 
 
-class Superpower(models.Model):
-    """
-    Galactic superpowers. e.g empire, ...
-    """
-
-    name = models.CharField(max_length=100, choices=Superpowers.choices)
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class Government(models.Model):
-    """
-    Government types like Confederacy, Communism, Corporate, ...
-    """
-
-    name = models.CharField(max_length=100, choices=Governments.choices)
-
-    def __str__(self):
-        return f"{self.name}"
-
-
 class State(models.Model):
     name = models.CharField(max_length=100, choices=States.choices)
 
@@ -737,18 +716,11 @@ class State(models.Model):
         return f"{self.name}"
 
 
-class EconomyState(models.Model):
-    name = models.CharField(max_length=100, choices=EconomyStates.choices)
-
-    def __str__(self):
-        return f"{self.name}"
-
-
-class SecurityState(models.Model):
-    name = models.CharField(max_length=100, choices=SecurityStates.choices)
-
-    def __str__(self):
-        return f"{self.name}"
+# class EconomyState(models.Model):
+#     name = models.CharField(max_length=100, choices=EconomyStates.choices)
+#
+#     def __str__(self):
+#         return f"{self.name}"
 
 
 class LocalFaction(models.Model):
@@ -776,12 +748,8 @@ class Faction(models.Model):
     home_system = models.ForeignKey(
         System, on_delete=models.SET_NULL, related_name="factions", null=True
     )
-    allegiance = models.ForeignKey(
-        Superpower, on_delete=models.CASCADE, related_name="factions", null=True
-    )
-    government = models.ForeignKey(
-        Government, on_delete=models.CASCADE, related_name="factions", null=True
-    )
+    allegiance = models.PositiveSmallIntegerField(choices=Superpowers.choices, null=True)
+    government = models.PositiveSmallIntegerField(choices=Governments.choices, null=True)
     is_player = models.BooleanField()
     tradedangerous_id = models.IntegerField(unique=True, null=True)
 

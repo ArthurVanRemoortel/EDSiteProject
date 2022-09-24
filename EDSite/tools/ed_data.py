@@ -49,7 +49,7 @@ try:
         CommodityCategory,
         LiveListing,
         HistoricListing,
-        CarrierMission, Faction, Government, Superpower,
+        CarrierMission, Faction
 )
 except ImproperlyConfigured:
     import django
@@ -96,25 +96,14 @@ class EDData(metaclass=SingletonMeta):
         self.faction_names_dict = {
             faction.name.lower(): faction for faction in Faction.objects.all()
         }
-        self.government_names_dict = {
-            government.name.lower().replace(" ", ""): government for government in Government.objects.all()
-        }
-        self.superpower_names_dict = {
-            power.name.lower(): power for power in Superpower.objects.all()
-        }
+
 
         print("Created new EDData object")
 
     def cache_find_system(self, name: str) -> Optional[System]:
         return self.system_names.get(name.lower())
 
-    def cache_find_government(self, name: str) -> Optional[Government]:
-        return self.government_names_dict.get(name.lower())
-
-    def cache_find_superpower(self, name: str) -> Optional[Government]:
-        return self.superpower_names_dict.get(name.lower())
-
-    def cache_find_faction(self, name: str) -> Optional[Government]:
+    def cache_find_faction(self, name: str) -> Optional[Faction]:
         return self.faction_names_dict.get(name.lower())
 
     def cache_set_faction(self, faction: Faction):

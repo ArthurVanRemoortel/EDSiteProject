@@ -12,57 +12,19 @@ except ImproperlyConfigured:
     from EDSite import models
 
 
-def createSuperpowers():
-    if models.Superpower.objects.count() == len(models.Superpowers):
-        print("SEEDER: Superpowers already seeded.")
+def seedGeneric(model_cls, enum):
+    if model_cls.objects.count() == len(enum):
+        print(f"SEEDER: {model_cls.__name__} already seeded.")
         return
     with transaction.atomic():
-        for integer, name in models.Superpowers.choices:
-            obj, created = models.Superpower.objects.get_or_create(
+        for integer, name in enum.choices:
+            obj, created = model_cls.objects.get_or_create(
                 id=integer, name=name
             )
             if created:
-                print(f"Seeded {obj}")
-
-
-def createGovernments():
-    if models.Government.objects.count() == len(models.Governments):
-        print("SEEDER: Governments already seeded.")
-        return
-    with transaction.atomic():
-        for integer, name in models.Governments.choices:
-            obj, created = models.Government.objects.get_or_create(
-                id=integer, name=name
-            )
-            if created:
-                print(f"Seeded {obj}")
-
-
-def createStates():
-    if models.State.objects.count() == len(models.States):
-        print("SEEDER: States already seeded.")
-        return
-    with transaction.atomic():
-        for integer, name in models.States.choices:
-            obj, created = models.State.objects.get_or_create(id=integer, name=name)
-            if created:
-                print(f"Seeded {obj}")
-
-
-def createEconomyStates():
-    if models.EconomyState.objects.count() == len(models.EconomyStates):
-        print("SEEDER: EconomyStates already seeded.")
-        return
-    with transaction.atomic():
-        for integer, name in models.EconomyState.choices:
-            obj, created = models.EconomyState.objects.get_or_create(
-                id=integer, name=name
-            )
-            if created:
-                print(f"Seeded {obj}")
+                print(f"Seeded {enum.__name__}: {obj}")
 
 
 def seedAll():
-    createSuperpowers()
-    createGovernments()
-    createStates()
+    # seedGeneric(SecurityState, SecurityStates)
+    seedGeneric(models.State, models.States)

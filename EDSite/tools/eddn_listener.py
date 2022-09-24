@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from django.db import transaction
 from django.db.models import Q
 from EDSite.helpers import is_carrier_name, make_timezone_aware, get_alt_commodity_names
-from EDSite.models import Station, LiveListing, System, Commodity, Faction
+from EDSite.models import Station, LiveListing, System, Commodity, Faction, SystemSecurities, Governments, Superpowers
 from EDSite.tools.external import edsm
 
 logger = logging.getLogger(__name__)
@@ -149,6 +149,17 @@ def create_station(station_name: str, system: System, extra=None) -> Optional[St
     station.tradedangerous_id = None
     station.save()
     return station
+
+
+def parse_system_security(system_security_string) -> Optional[SystemSecurities]:
+    if not system_security_string:
+        return None
+    if system_security_string:
+        if '$GAlAXY_MAP_INFO_state_' in system_security_string:
+            system_security_string = system_security_string[23:][:-1]
+        else:
+            system_security_string = system_security_string[17:][:-1]
+        return SystemSecurities.from_string(system_security_string)
 
 
 class EDDNSchemaProcessor(ABC):
@@ -362,6 +373,7 @@ class JournalProcessor(EDDNSchemaProcessor):
         updated_factions = []
         new_factions = {}
         for message in messages:
+            system_changed = False
             header = message["header"]
             data: {} = message["message"]
             uploader = header["uploaderID"]
@@ -377,17 +389,16 @@ class JournalProcessor(EDDNSchemaProcessor):
             population = data.get("Population")
             body_type = data.get("BodyType")
             system_name = data.get("StarSystem")
-            system_security = data.get("SystemSecurity")
+            system_security = parse_system_security(data.get("SystemSecurity"))
+
             system: Optional[System] = ed_data.EDData().cache_find_system(system_name)
+
             if not system:
                 # logger.warning(f"System {system_name} was not found. Population={population}")
                 continue
 
             if body_type not in ["Star", "Station"]:
                 continue
-
-            # pprint(data)
-            # print("-------" * 10)
 
             if body_type == "Star" and (population == 0 or population is None):
                 logger.warning(
@@ -397,34 +408,33 @@ class JournalProcessor(EDDNSchemaProcessor):
 
             if system.population != population:
                 system.population = population
-                updated_systems.append(system)
-            # TODO: Station population
+                system_changed = True
 
-            # if "SystemFaction" not in data:
-            #     logger.error()
+            if system.security != system_security:
+                system.security = system_security
+                system_changed = True
+
+
+            system_government = Governments.from_string(data["SystemGovernment"].split("_")[-1][:-1])
+            system_allegiance = Superpowers.from_string(data["SystemAllegiance"])
 
             system_faction_name = data["SystemFaction"]["Name"]
             system_faction = ed_data.EDData().cache_find_faction(system_faction_name)
-            system_government = ed_data.EDData().cache_find_government(
-                data["SystemGovernment"].split("_")[-1][:-1]
-            )
-            system_allegiance = ed_data.EDData().cache_find_superpower(
-                data["SystemAllegiance"]
-            )
+
             if (
                 system.allegiance != system_allegiance
                 or system.government != system_government
             ):
                 system.allegiance = system_allegiance
                 system.government = system_government
-                updated_systems.append(system)
+                system_changed = True
             # I think I do not need to check if system_faction exists since I will look for it below.
             if factions:
                 for faction_dict in factions:
-                    faction_allegiance = ed_data.EDData().cache_find_superpower(
+                    faction_allegiance = Superpowers.from_string(
                         faction_dict["Allegiance"]
                     )
-                    faction_government = ed_data.EDData().cache_find_government(
+                    faction_government = Governments.from_string(
                         faction_dict["Government"]
                     )
                     faction_name: str = faction_dict["Name"]
@@ -446,7 +456,10 @@ class JournalProcessor(EDDNSchemaProcessor):
                         ):
                             # logger.info(f"Updated controlling faction of {system} from {system.controlling_faction} to {faction}")
                             system.controlling_faction = faction
-                            updated_systems.append(system)
+                            system_changed = True
+
+            if system_changed:
+                updated_systems.append(system)
 
         if new_factions:
             t0 = time.time()
@@ -481,11 +494,13 @@ class JournalProcessor(EDDNSchemaProcessor):
         if updated_systems:
             with transaction.atomic():
                 for system in updated_systems:
+                    # logger.info(f'Updated system: {system}')
                     System.objects.select_for_update().filter(pk=system.id).update(
                         allegiance=system.allegiance,
                         government=system.government,
                         controlling_faction=system.controlling_faction,
                         population=system.population,
+                        security=system.security,
                     )
                     # logger.info(f'updated system demographics: {system}')
 
