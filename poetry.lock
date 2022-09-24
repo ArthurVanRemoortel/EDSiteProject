@@ -572,7 +572,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.9"
-content-hash = "c5fd98aaf5722dc406a146baef45d38ef8b700b7f07fdb515ff3ec5826729b1d"
+content-hash = "2b8e609ea14ec9ef15a7f2525eb4a75618a3c53de329ab8f335e92a05c6beef1"
 
 [metadata.files]
 aiohttp = [
@@ -1144,10 +1144,6 @@ tqdm = [
 tradedangerous = [
     {file = "tradedangerous-10.13.7-py3-none-any.whl", hash = "sha256:277c2ffcdf80037281a7792ea2c1b8e5b41f462e39cd008e689aabdd9f93c41a"},
     {file = "tradedangerous-10.13.7.tar.gz", hash = "sha256:a4e378317736f6664e5e7ce1e2c7a67df2a306bed785c05ef32cfc36a8e44a4a"},
-]
-typing-extensions = [
-    {file = "typing_extensions-4.3.0-py3-none-any.whl", hash = "sha256:25642c956049920a5aa49edcdd6ab1e06d7e5d467fc00e0506c44ac86fbfca02"},
-    {file = "typing_extensions-4.3.0.tar.gz", hash = "sha256:e6d2677a32f47fc7eb2795db1dd15c1f34eff616bcaf2cfb5e997f854fa1c4a6"},
 ]
 tzdata = [
     {file = "tzdata-2022.2-py2.py3-none-any.whl", hash = "sha256:c3119520447d68ef3eb8187a55a4f44fa455f30eb1b4238fa5691ba094f2b05b"},
