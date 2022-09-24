@@ -182,7 +182,7 @@
 
             function formatStation (state) {
                 if (state.loading) return "Looking up systems...";
-                return state.name;
+                return state.name + ' / ' + state.system.name;
             }
 
             function onSearchSelect (e) {
@@ -206,7 +206,9 @@
                 "{% url "api-systems-list" %}",
                 defaultProcessResults,
                 defaultDataFunction,
-                formatStation,
+                function (system) {
+                    return system.name
+                },
                 formatStationSelection,
                 "Station Name"
             )

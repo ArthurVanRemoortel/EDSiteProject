@@ -103,7 +103,7 @@
                                 <div class="column">
                                     <p class="mt-2">/</p>
                                     <p class="mt-2">/</p>
-                                    <p class="mt-2">/</p>
+                                    <p class="mt-2">{% if station.system.allegiance %}{{ station.system.get_allegiance_display }}{% else %} ? {% endif %}</p>
                                     <p class="mt-2">/</p>
                                     <div class="buttons mt-2">
                                       <button class="button is-primary is-small is-rounded" >Placeholder</button>

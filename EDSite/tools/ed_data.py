@@ -647,12 +647,11 @@ class EDData(metaclass=SingletonMeta):
         commodities = list(Commodity.objects.all())
         best_buys = {commodity.id: None for commodity in commodities}
         best_sells = {commodity.id: None for commodity in commodities}
-        live_listing: LiveListing
-        for live_listing in tqdm(
-            LiveListing.objects.filter(
+        lls = LiveListing.objects.filter(
                 Q(supply_units__gte=5) | Q(demand_units__gte=100)
             ).iterator(100000)
-        ):
+        live_listing: LiveListing
+        for live_listing in tqdm(lls):
             if live_listing.is_recently_modified:
                 existing_best_sell = best_sells[live_listing.commodity_id]
                 existing_best_buy = best_buys[live_listing.commodity_id]

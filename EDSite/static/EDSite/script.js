@@ -1,5 +1,5 @@
 function defaultProcessResults (data, params) {
-    var results = $.map(data.results,function (obj) {
+    const results = $.map(data.results, function (obj) {
         obj.text = obj.name;
         return obj;
     });

@@ -11,9 +11,34 @@ class CommoditySerializer(serializers.HyperlinkedModelSerializer):
 
 
 class SystemSerializer(serializers.HyperlinkedModelSerializer):
+    government_id = "test"
+    government_name = serializers.CharField(source="get_government_display")
+    allegiance_name = serializers.CharField(source="get_allegiance_display")
+    security_name = serializers.CharField(source="get_security_display")
+    # station_names = serializers.SerializerMethodField('get_station_names')
+
     class Meta:
         model = System
-        fields = ["id", "name", "pos_x", "pos_y", "pos_z", "tradedangerous_id"]
+        depth = 1
+        fields = [
+            "id",
+            "name",
+            "pos_x",
+            "pos_y",
+            "pos_z",
+            "tradedangerous_id",
+            "population",
+            "government",
+            "government_name",
+            "allegiance",
+            "allegiance_name",
+            "security",
+            "security_name",
+            # "station_names",
+        ]
+
+    def get_station_names(self, obj):
+        return obj.get_station_names
 
 
 class StationSerializer(serializers.HyperlinkedModelSerializer):
@@ -43,12 +68,8 @@ class StationSerializer(serializers.HyperlinkedModelSerializer):
 
 
 class ListingsSerializer(serializers.HyperlinkedModelSerializer):
-    # commodity = serializers.SlugRelatedField(read_only=True, slug_field='name')
-    # commodity = serializers.HyperlinkedRelatedField(read_only=True, view_name='CommoditiesViewSet')
     commodity = CommoditySerializer()
     station = StationSerializer()
-    # commodity = serializers.PrimaryKeyRelatedField(read_only=True)
-    # station = serializers.RelatedField(read_only=True)
 
     class Meta:
         model = LiveListing

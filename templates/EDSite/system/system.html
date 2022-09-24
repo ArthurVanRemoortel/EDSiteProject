@@ -1,4 +1,5 @@
 {% extends 'EDSite/base.html' %}
+{% load humanize %}
 {% load extras %}
 {% block title %}
     {{ system.name }}
@@ -75,7 +76,7 @@
                                     <p class="mt-2">{{ system.distance_to_sol|floatformat:0 }} <span class="unit">Ly</span></p>
                                     <p class="mt-2">{{ system|distance_to:current_system}} <span class="unit">Ly</span></p>
                                     <p class="mt-2">?</p>
-                                    <p class="mt-2">?</p>
+                                    <p class="mt-2">{% if system.security %} {{ system.get_security_display }} {% else %} ? {% endif %}</p>
                                     <p class="mt-2">?</p>
                                     <p class="mt-2">
                                         {% if system.controlling_faction %}
@@ -98,12 +99,12 @@
                                     <p class="mt-2">States</p>
                                 </div>
                                 <div class="column">
-                                    <p class="mt-2">{% if system.population %}{{ system.population }} <span class="unit">People</span>{% else %} ? {% endif %}</p>
+                                    <p class="mt-2">{% if system.population %}{{ system.population|intcomma }} <span class="unit">People</span>{% else %} ? {% endif %}</p>
                                     <p class="mt-2">?</p>
-                                    <p class="mt-2">{% if system.government %}{{ system.government.name }}{% else %} ? {% endif %}</p>
-                                    <p class="mt-2">{% if system.allegiance %}{{ system.allegiance.name }}{% else %} ? {% endif %}</p>
+                                    <p class="mt-2">{% if system.government %}{{ system.get_government_display }}{% else %} ? {% endif %}</p>
+                                    <p class="mt-2">{% if system.allegiance %}{{ system.get_allegiance_display }}{% else %} ? {% endif %}</p>
                                     <div class="buttons mt-2">
-                                        <button class="button is-primary is-small is-rounded" >Placeholder</button>
+                                        <button class="button is-primary is-small is-rounded">Placeholder</button>
                                         <button class="button is-primary is-small is-rounded">Placeholder</button>
                                         <button class="button is-primary is-small is-rounded">Placeholder</button>
                                     </div>

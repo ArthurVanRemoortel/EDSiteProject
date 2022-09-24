@@ -298,6 +298,10 @@ class System(models.Model):
         dZ = self.pos_z
         return ((dX**2) + (dY**2) + (dZ**2)) ** 0.5
 
+    @property
+    def get_station_names(self):
+        return list(s.name for s in Station.objects.filter(system_id=self.id).only('name').all())
+
     def __str__(self):
         return self.name + f"({self.id})"
 
