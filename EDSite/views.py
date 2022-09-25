@@ -36,19 +36,18 @@ from EDSite.models import (
 )
 from EDSiteProject import settings
 
-if 'runserver' in sys.argv:
+if "runserver" in sys.argv:
     try:
         USER_CARRIER = ("Normandy SR-404", Station.objects.get(pk=199781))  # K7Q-BQL
         CURRENT_SYSTEM = USER_CARRIER[1].system
     except Exception as e:
         print("WARNING: Did not find USER_CARRIER: Using a random one instead.")
-        USER_CARRIER = ("Normandy SR-404", Station.objects.get(name='K7Q-BQL'))
+        USER_CARRIER = ("Normandy SR-404", Station.objects.get(name="K7Q-BQL"))
         CURRENT_SYSTEM = USER_CARRIER[1].system
 
 else:
     USER_CARRIER = (None, None)
     CURRENT_SYSTEM = None
-
 
 
 def logged_in_user(request):
@@ -173,7 +172,7 @@ def stations(request):
         if landing_pad_size == "M":
             filtered_stations = filtered_stations.exclude(Q(pad_size="S"))
         elif landing_pad_size == "L":
-            filtered_stations = filtered_stations.filter(Q(station__pad_size="L"))
+            filtered_stations = filtered_stations.filter(Q(pad_size="L"))
 
     filtered_stations = filtered_stations[:40]
     if ref_system:
