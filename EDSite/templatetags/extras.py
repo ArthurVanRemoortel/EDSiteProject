@@ -35,6 +35,8 @@ def external_url(obj, site):
         if site == "inara":
             return f"https://inara.cz/elite/starsystem/?search={obj.name}"
         elif site == "eddb":
+            if not obj.tradedangerous_id:
+                return None
             return f"https://eddb.io/system/{obj.tradedangerous_id}"
     elif isinstance(obj, Station):
         if site == "inara":
@@ -42,6 +44,8 @@ def external_url(obj, site):
                 f"https://inara.cz/elite/station/?search={obj.name} [{obj.system.name}]"
             )
         elif site == "eddb":
+            if not obj.tradedangerous_id:
+                return None
             return f"https://eddb.io/station/{obj.tradedangerous_id}"
     elif isinstance(obj, Commodity):
         if site == "inara":

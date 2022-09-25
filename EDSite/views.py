@@ -38,10 +38,10 @@ from EDSiteProject import settings
 
 if "runserver" in sys.argv:
     try:
-        USER_CARRIER = ("Normandy SR-404", Station.objects.get(pk=199781))  # K7Q-BQL
+        USER_CARRIER = ("Normandy SR-404", Station.objects.get(pk=202008))  # K7Q-BQL
         CURRENT_SYSTEM = USER_CARRIER[1].system
     except Exception as e:
-        print("WARNING: Did not find USER_CARRIER: Using a random one instead.")
+        print("WARNING: Did not find USER_CARRIER: Searching by name instead.")
         USER_CARRIER = ("Normandy SR-404", Station.objects.get(name="K7Q-BQL"))
         CURRENT_SYSTEM = USER_CARRIER[1].system
 

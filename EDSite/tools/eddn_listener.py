@@ -16,7 +16,16 @@ from abc import ABC, abstractmethod
 from django.db import transaction
 from django.db.models import Q
 from EDSite.helpers import is_carrier_name, make_timezone_aware, get_alt_commodity_names
-from EDSite.models import Station, LiveListing, System, Commodity, Faction, SystemSecurities, Governments, Superpowers
+from EDSite.models import (
+    Station,
+    LiveListing,
+    System,
+    Commodity,
+    Faction,
+    SystemSecurities,
+    Governments,
+    Superpowers,
+)
 from EDSite.tools.external import edsm
 
 logger = logging.getLogger(__name__)
@@ -76,6 +85,8 @@ class RetryStation:
 def determine_station_and_system(
     station_name: str, system_name: str
 ) -> (System, Station):
+    system_name = system_name.lower()
+    station_name = station_name.lower()
     system = None
     station: Optional[Station] = None
     if not is_carrier_name(station_name):
@@ -110,7 +121,7 @@ def create_listings(new_listings: {Station, list[LiveListing]}):
             try:
                 station.modified = listings[0].modified
             except IndexError:
-                station.modified = make_timezone_aware(datetime.now())
+                station.modified = make_timezone_aware(datetime.datetime.now())
             stations.append(station)
     return stations
 
@@ -141,12 +152,14 @@ def create_station(station_name: str, system: System, extra=None) -> Optional[St
         if data:
             station = edsm.create_station_from_data(data)
         else:
-            logger.warning(
-                f"Did not find {station_name} in {system}. It might not exist yet on EDSM but it might appear soon."
-            )
+            # logger.warning(
+            #     f"Did not find {station_name} in {system}. It might not exist yet on EDSM but it might appear soon."
+            # )
             return None
+    logger.info(f"Created station: {station}")
     station.system_id = system.id
     station.tradedangerous_id = None
+    # logger.info(f"IGNORED SAVED station {station}")
     station.save()
     return station
 
@@ -155,7 +168,7 @@ def parse_system_security(system_security_string) -> Optional[SystemSecurities]:
     if not system_security_string:
         return None
     if system_security_string:
-        if '$GAlAXY_MAP_INFO_state_' in system_security_string:
+        if "$GAlAXY_MAP_INFO_state_" in system_security_string:
             system_security_string = system_security_string[23:][:-1]
         else:
             system_security_string = system_security_string[17:][:-1]
@@ -262,6 +275,7 @@ class CommodityProcessor(EDDNSchemaProcessor):
         messages = self.get_message_batch()
         to_update_stations: {str, Station} = {}
         new_listings: {Station: list} = {}
+        new_stations: {(str, str), {str: Any}} = {}
         for message in messages:
             header = message["header"]
             data = message["message"]
@@ -269,8 +283,8 @@ class CommodityProcessor(EDDNSchemaProcessor):
             uploader = header["uploaderID"]
             software = header["softwareName"]
 
-            system_name = data["systemName"].lower()
-            station_name = data["stationName"].lower()
+            system_name = data["systemName"]
+            station_name = data["stationName"]
             timestamp = data["timestamp"]
             commodities = data["commodities"]
             modified = self.parse_timestamp(timestamp)
@@ -282,7 +296,7 @@ class CommodityProcessor(EDDNSchemaProcessor):
             )
 
             if not system:
-                logger.warning(f"System {system_name} for {station_name} is not known.")
+                # logger.warning(f"System {system_name} for {station_name} is not known.")
                 continue
 
             if (
@@ -290,36 +304,48 @@ class CommodityProcessor(EDDNSchemaProcessor):
                 and (station and system)
                 and (station.system_id != system.id)
             ):
+                # logger.info(f"Moved carrier {station} from {station.system} to {system}")
                 station.system_id = system.id
                 station.modified = modified
-                # logger.info(f"Moved carrier {station} to {system}")
-                to_update_stations[station_name] = station
+                to_update_stations[station.id] = station
 
             if not station:
-                logger.info(
-                    f"Station not found: {(station_name, system_name)}. Will create a temporary one."
+                # It's a new station:
+                if (system_name, station_name) not in self.retry_stations:
+                    new_stations[(system_name, station_name)] = {
+                        "system": system,
+                        "station_name": station_name,
+                        "modified": modified,
+                        "extra": {"listings": commodities},
+                    }
+                # else:
+                #     logger.warning(f"Station {station_name} was already in retry_stations. It has been skipped.")
+
+        for new_station_data in new_stations.values():
+            station_name = new_station_data["station_name"]
+            system = new_station_data["system"]
+            modified = new_station_data["modified"]
+            listings = new_station_data["extra"]["listings"]
+            # logger.info(
+            #     f"Station not found: {(station_name, system.name)}. Will create a temporary one."
+            # )
+            station = create_station(station_name, system, extra={"listings": listings})
+            if station:
+                ed_data.EDData().station_names_dict[
+                    (station_name.lower(), system.name.lower())
+                ] = station
+            else:
+                # logger.info(f"Added station {station_name} to retry_stations.")
+                self.retry_stations[(system.name, station_name)] = RetryStation(
+                    system=system,
+                    station_name=station_name,
+                    extra={"listings": listings},
                 )
-                station = create_station(
-                    station_name, system, extra={"listings": commodities}
-                )
-                if station:
-                    ed_data.EDData().station_names_dict[
-                        (station_name.lower(), system_name.lower())
-                    ] = station
-                else:
-                    logger.info(f"Added station {station_name} to retry_stations.")
-                    self.retry_stations[(system_name, station_name)] = RetryStation(
-                        system=system,
-                        station_name=station_name,
-                        extra={"listings": commodities},
-                    )
 
             if station:
                 if station not in new_listings:
                     new_listings[station] = []
-                new_listings[station] = self.parse_listings(
-                    station, modified, commodities
-                )
+                new_listings[station] = self.parse_listings(station, modified, listings)
 
         retry_station: RetryStation
         for retry_station in self.retry_stations.values():
@@ -348,6 +374,9 @@ class CommodityProcessor(EDDNSchemaProcessor):
             updated_stations = create_listings(new_listings)
             new_listings.clear()
             for updated_station in updated_stations:
+                if (updated_station.system.name, updated_station.name) in new_stations:
+                    # logger.warning(f'Skipped update of station {updated_station} that was just created.')
+                    continue
                 if updated_station.id not in to_update_stations:
                     to_update_stations[updated_station.id] = updated_station
                 to_update_stations[
@@ -357,6 +386,7 @@ class CommodityProcessor(EDDNSchemaProcessor):
         if to_update_stations:
             with transaction.atomic():
                 for station in to_update_stations.values():
+                    # logger.info(f"Updated station: {station}")
                     Station.objects.select_for_update().filter(id=station.id).update(
                         system_id=station.system_id, modified=station.modified
                     )
@@ -414,8 +444,9 @@ class JournalProcessor(EDDNSchemaProcessor):
                 system.security = system_security
                 system_changed = True
 
-
-            system_government = Governments.from_string(data["SystemGovernment"].split("_")[-1][:-1])
+            system_government = Governments.from_string(
+                data["SystemGovernment"].split("_")[-1][:-1]
+            )
             system_allegiance = Superpowers.from_string(data["SystemAllegiance"])
 
             system_faction_name = data["SystemFaction"]["Name"]
@@ -431,6 +462,8 @@ class JournalProcessor(EDDNSchemaProcessor):
             # I think I do not need to check if system_faction exists since I will look for it below.
             if factions:
                 for faction_dict in factions:
+                    print(faction_dict)
+                    print('-------------')
                     faction_allegiance = Superpowers.from_string(
                         faction_dict["Allegiance"]
                     )
