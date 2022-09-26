@@ -49,8 +49,11 @@ try:
         CommodityCategory,
         LiveListing,
         HistoricListing,
-        CarrierMission, Faction
-)
+        CarrierMission,
+        Faction,
+        LocalFaction,
+        State,
+    )
 except ImproperlyConfigured:
     import django
 
@@ -93,15 +96,27 @@ class EDData(metaclass=SingletonMeta):
             for station in Station.objects.select_related("system").all()
         }
 
+        self.states_dict = {state.id: state for state in State.objects.all()}
+
         self.faction_names_dict = {
             faction.name.lower(): faction for faction in Faction.objects.all()
         }
 
+        self.local_faction_dict = {
+            (
+                local_faction.system.name.lower(),
+                local_faction.faction.name.lower(),
+            ): local_faction
+            for local_faction in LocalFaction.objects.select_related('system', 'faction').all()
+        }
 
         print("Created new EDData object")
 
     def cache_find_system(self, name: str) -> Optional[System]:
         return self.system_names.get(name.lower())
+
+    def cache_find_state(self, state_id: int) -> Optional[State]:
+        return self.states_dict.get(state_id)
 
     def cache_find_faction(self, name: str) -> Optional[Faction]:
         return self.faction_names_dict.get(name.lower())
@@ -109,6 +124,15 @@ class EDData(metaclass=SingletonMeta):
     def cache_set_faction(self, faction: Faction):
         self.faction_names_dict[faction.name.lower()] = faction
 
+    def cache_find_local_faction(
+        self, system_id: int, faction_name: str
+    ) -> Optional[LocalFaction]:
+        return self.local_faction_dict.get((system_id, faction_name.lower()))
+
+    def cache_set_local_faction(self, local_faction: LocalFaction):
+        self.local_faction_dict[
+            (local_faction.system.id, local_faction.faction.name.lower())
+        ] = local_faction
 
     def start_live_listener(self, daemon=True):
         self.live_listener = EDDNListener()
@@ -648,8 +672,8 @@ class EDData(metaclass=SingletonMeta):
         best_buys = {commodity.id: None for commodity in commodities}
         best_sells = {commodity.id: None for commodity in commodities}
         lls = LiveListing.objects.filter(
-                Q(supply_units__gte=5) | Q(demand_units__gte=100)
-            ).iterator(100000)
+            Q(supply_units__gte=5) | Q(demand_units__gte=100)
+        ).iterator(100000)
         live_listing: LiveListing
         for live_listing in tqdm(lls):
             if live_listing.is_recently_modified:

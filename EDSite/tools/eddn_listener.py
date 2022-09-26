@@ -25,6 +25,9 @@ from EDSite.models import (
     SystemSecurities,
     Governments,
     Superpowers,
+    States,
+    LocalFaction,
+    FactionHappiness,
 )
 from EDSite.tools.external import edsm
 
@@ -173,6 +176,13 @@ def parse_system_security(system_security_string) -> Optional[SystemSecurities]:
         else:
             system_security_string = system_security_string[17:][:-1]
         return SystemSecurities.from_string(system_security_string)
+
+
+def parse_faction_happiness(happiness_string) -> Optional[FactionHappiness]:
+    if happiness_string == "":
+        return FactionHappiness.HAPPY
+    number = int(happiness_string[-2])
+    return FactionHappiness(6 - number)
 
 
 class EDDNSchemaProcessor(ABC):
@@ -402,6 +412,7 @@ class JournalProcessor(EDDNSchemaProcessor):
         updated_systems = []
         updated_factions = []
         new_factions = {}
+        new_local_factions = {}
         for message in messages:
             system_changed = False
             header = message["header"]
@@ -450,7 +461,7 @@ class JournalProcessor(EDDNSchemaProcessor):
             system_allegiance = Superpowers.from_string(data["SystemAllegiance"])
 
             system_faction_name = data["SystemFaction"]["Name"]
-            system_faction = ed_data.EDData().cache_find_faction(system_faction_name)
+            # system_faction = ed_data.EDData().cache_find_faction(system_faction_name)
 
             if (
                 system.allegiance != system_allegiance
@@ -462,20 +473,48 @@ class JournalProcessor(EDDNSchemaProcessor):
             # I think I do not need to check if system_faction exists since I will look for it below.
             if factions:
                 for faction_dict in factions:
-                    print(faction_dict)
-                    print('-------------')
+                    # print(faction_dict)
+                    faction_name: str = faction_dict["Name"]
+
                     faction_allegiance = Superpowers.from_string(
                         faction_dict["Allegiance"]
                     )
                     faction_government = Governments.from_string(
                         faction_dict["Government"]
                     )
-                    faction_name: str = faction_dict["Name"]
+
+                    faction_active_states = [
+                        States.from_string(state["State"])
+                        for state in faction_dict.get("ActiveStates", [])
+                    ]
+
+                    faction_pending_states = [
+                        States.from_string(state["State"])
+                        for state in faction_dict.get("PendingStates", [])
+                    ]
+                    faction_recovering_states = [
+                        States.from_string(state["State"])
+                        for state in faction_dict.get("RecoveringStates", [])
+                    ]
+
+                    faction_influence = float(faction_dict.get("Influence"))
+                    try:
+                        happiness = parse_faction_happiness(
+                            faction_dict.get("Happiness")
+                        )
+                    except Exception as e:
+                        # if happiness != '$Faction_HappinessBand2;':
+                        logger.info(
+                            f'Happiness: {faction_dict.get("Happiness")} for {faction_name} in {system}'
+                        )
+                        raise e
+
                     faction = ed_data.EDData().cache_find_faction(faction_name)
                     if not faction:
                         # New system faction
                         new_factions[faction_dict["Name"]] = {
                             "name": faction_name,
+                            "system": system,
                             "government": faction_government,
                             "allegiance": faction_allegiance,
                             "system_faction": system
@@ -491,11 +530,22 @@ class JournalProcessor(EDDNSchemaProcessor):
                             system.controlling_faction = faction
                             system_changed = True
 
+                    new_local_factions[(system.id, faction_name)] = {
+                        "name": faction_name,
+                        "system": system,
+                        "states": faction_active_states,
+                        "pending_states": faction_pending_states,
+                        "recovering_states": faction_recovering_states,
+                        "influence": faction_influence,
+                        "happiness": happiness,
+                        "modified": modified,
+                        # "DEBUG": faction_dict,
+                    }
+
             if system_changed:
                 updated_systems.append(system)
 
         if new_factions:
-            t0 = time.time()
             for faction_data in new_factions.values():
                 controls_system = faction_data["system_faction"]
                 if ed_data.EDData().cache_find_faction(faction_data["name"]):
@@ -511,18 +561,107 @@ class JournalProcessor(EDDNSchemaProcessor):
                     tradedangerous_id=None,
                 )
                 faction.save()
-                created = True
-                if created:
-                    # faction.save()
-                    ed_data.EDData().cache_set_faction(faction)
-                    # logger.info(f'Created new faction: {faction}')
-                    if (
-                        controls_system
-                        and controls_system.controlling_faction_id != faction.id
-                    ):
-                        controls_system.controlling_faction = faction
-                        updated_systems.append(controls_system)
-            # print("LEN:", len(ed_data.EDData().faction_names_dict))
+                ed_data.EDData().cache_set_faction(faction)
+                # logger.info(f'Created new faction: {faction}')
+                if (
+                    controls_system
+                    and controls_system.controlling_faction_id != faction.id
+                ):
+                    controls_system.controlling_faction = faction
+                    updated_systems.append(controls_system)
+
+        if new_local_factions:
+            for local_faction_data in new_local_factions.values():
+                name: str = local_faction_data["name"]
+                system: System = local_faction_data["system"]
+                faction = ed_data.EDData().cache_find_faction(name)
+                if not faction:
+                    logger.error(
+                        f"Tried to create LocalFaction for {name} but it did not exist in the database"
+                    )
+                    continue
+                existing_local_faction = ed_data.EDData().cache_find_local_faction(
+                    system_id=system.id, faction_name=name
+                )
+                if not existing_local_faction:
+                    local_faction = LocalFaction(
+                        faction=faction,
+                        system=system,
+                        happiness=local_faction_data.get("happiness"),
+                        influence=local_faction_data.get("influence"),
+                        modified=local_faction_data.get("modified"),
+                    )
+                    local_faction.save()
+                    try:
+                        local_faction.states.set(
+                            [
+                                ed_data.EDData().cache_find_state(s.value)
+                                for s in local_faction_data.get("states")
+                            ]
+                        )
+                        local_faction.recovering_states.set(
+                            [
+                                ed_data.EDData().cache_find_state(s.value)
+                                for s in local_faction_data.get("recovering_states")
+                            ]
+                        )
+                        local_faction.pending_states.set(
+                            [
+                                ed_data.EDData().cache_find_state(s.value)
+                                for s in local_faction_data.get("pending_states")
+                            ]
+                        )
+                    except Exception as er:
+                        raise er
+                    local_faction.save()
+                    ed_data.EDData().cache_set_local_faction(local_faction)
+                    # logger.info(f"Created local_faction: {local_faction} in {system}")
+                else:
+                    states_changed = existing_local_faction.has_states_changed(
+                        local_faction_data.get("states"),
+                        local_faction_data.get("recovering_states"),
+                        local_faction_data.get("pending_states"),
+                    )
+                    other_changed = existing_local_faction.influence != local_faction_data.get("influence")
+                    # logger.info(f"{existing_local_faction}, {other_changed}, {states_changed}")
+                    if states_changed or other_changed:  # TODO: Or anything else changed?
+                        # logger.warning(f"Trying to update LocalFaction {existing_local_faction} updated in {system} (states_changed={states_changed}, other_changed={other_changed})")
+                        with transaction.atomic():
+                            l_faction: LocalFaction = LocalFaction.objects.select_for_update().get(
+                                pk=existing_local_faction.id
+                            )
+                            if states_changed:
+                                local_faction_data.get("states")
+                                local_faction_data.get("recovering_states")
+                                local_faction_data.get("pending_states")
+                                l_faction.states.set(
+                                    [
+                                        ed_data.EDData().cache_find_state(s.value)
+                                        for s in local_faction_data.get("states")
+                                    ]
+                                )
+                                l_faction.recovering_states.set(
+                                    [
+                                        ed_data.EDData().cache_find_state(s.value)
+                                        for s in local_faction_data.get("recovering_states")
+                                    ]
+                                )
+                                l_faction.pending_states.set(
+                                    [
+                                        ed_data.EDData().cache_find_state(s.value)
+                                        for s in local_faction_data.get("pending_states")
+                                    ]
+                                )
+                            if other_changed or states_changed:
+                                l_faction.happiness = local_faction_data.get("happiness")
+                                l_faction.influence = local_faction_data.get("influence")
+                                l_faction.modified = local_faction_data.get("modified")
+
+                            l_faction.save()
+
+                        # logger.warning(
+                        #     f"LocalFaction {existing_local_faction} updated in {system} (states_changed={states_changed}, other_changed={other_changed})"
+                        # )
 
         if updated_systems:
             with transaction.atomic():

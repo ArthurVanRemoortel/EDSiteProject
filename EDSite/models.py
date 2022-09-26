@@ -5,7 +5,7 @@ from EDSite.helpers import (
     difference_percent,
     is_listing_better_than,
     datetime_to_age_string,
-    ParsableChoices
+    ParsableChoices,
 )
 from django.core.cache import cache
 from django.conf import settings
@@ -29,21 +29,6 @@ class FactionHappiness(models.IntegerChoices, ParsableChoices):
     ELATED = 5, "Elated"
 
 
-class EconomyStates(models.IntegerChoices, ParsableChoices):
-    FAMINE = 1, "Famine"
-    BUST = 2, "Bust"
-    NONE = 3, "None"
-    BOOM = 4, "Boom"
-    INVESTMENT = 5, "Investment"
-
-
-class SecurityStates(models.IntegerChoices, ParsableChoices):
-    LOCKDOWN = 1, "Lockdown"
-    CIVIL_UNREST = 2, "Civil Unrest"
-    NONE = 3, "None"
-    CIVIL_LIBERTY = 4, "Civil Liberty"
-
-
 class SystemSecurities(models.IntegerChoices, ParsableChoices):
     LOW = 1, "Low"
     MEDIUM = 2, "Medium"
@@ -52,7 +37,7 @@ class SystemSecurities(models.IntegerChoices, ParsableChoices):
     LAWLESS = 5, "Lawless"
 
 
-class States(models.TextChoices):
+class States(models.IntegerChoices, ParsableChoices):
     INCURSION = 1, "Incursion"
     INFESTED = 2, "Infested"
     BLIGHT = 3, "Blight"
@@ -64,16 +49,26 @@ class States(models.TextChoices):
     COLD_WAR = 9, "Cold War"
     TRADE_WAR = 10, "Trade War"
     PIRATE_ATTACK = 11, "Pirate Attack"
-    TERRORIST_ATTACK = 12, "Terrorist Attack"
+    TERRORISM = 12, "Terrorism"
     PUBLIC_HOLIDAY = 13, "Public Holiday"
     TECHNOLOGICAL_LEAP = 14, "Technological Leap"
     HISTORIC_EVENT = 15, "Historic Event"
     COLONISATION = 16, "Colonisation"
     WAR = 17, "War"
     CIVIL_WAR = 18, "Civil War"
-    ELECTIONS = 19, "Elections"
+    ELECTION = 19, "Election"
     RETREAT = 20, "Retreat"
     EXPANSION = 21, "Expansion"
+    NONE = 22, "None"
+
+    FAMINE = 101, "Famine"
+    BUST = 102, "Bust"
+    BOOM = 104, "Boom"
+    INVESTMENT = 105, "Investment"
+
+    LOCKDOWN = 201, "Lockdown"
+    CIVIL_UNREST = 202, "Civil Unrest"
+    CIVIL_LIBERTY = 204, "Civil Liberty"
 
 
 class Superpowers(models.IntegerChoices, ParsableChoices):
@@ -271,14 +266,20 @@ class System(models.Model):
     pos_y = models.FloatField()
     pos_z = models.FloatField()
     population = models.BigIntegerField(null=True)
-    government = models.PositiveSmallIntegerField(choices=Governments.choices, null=True)
-    allegiance = models.PositiveSmallIntegerField(choices=Superpowers.choices, null=True)
+    government = models.PositiveSmallIntegerField(
+        choices=Governments.choices, null=True
+    )
+    allegiance = models.PositiveSmallIntegerField(
+        choices=Superpowers.choices, null=True
+    )
 
     controlling_faction = models.ForeignKey(
         "Faction", on_delete=models.SET_NULL, related_name="controls", null=True
     )
     # security = models.PositiveSmallIntegerField(choices=SecurityStates.choices, null=True)
-    security = models.PositiveSmallIntegerField(choices=SystemSecurities.choices, null=True)
+    security = models.PositiveSmallIntegerField(
+        choices=SystemSecurities.choices, null=True
+    )
 
     tradedangerous_id = models.IntegerField(unique=True, db_index=True)
 
@@ -300,7 +301,9 @@ class System(models.Model):
 
     @property
     def get_station_names(self):
-        return list(s.name for s in Station.objects.filter(system_id=self.id).only('name').all())
+        return list(
+            s.name for s in Station.objects.filter(system_id=self.id).only("name").all()
+        )
 
     def __str__(self):
         return self.name + f"({self.id})"
@@ -732,19 +735,45 @@ class LocalFaction(models.Model):
         "Faction", on_delete=models.CASCADE, related_name="states"
     )
     system = models.ForeignKey(
-        System, on_delete=models.CASCADE, related_name="faction_states"
+        System, on_delete=models.CASCADE, related_name="local_factions"
     )
     states = models.ManyToManyField(State, related_name="factions")
     recovering_states = models.ManyToManyField(
         State, related_name="recovering_factions"
     )
     pending_states = models.ManyToManyField(State, related_name="pending_factions")
-    happiness = models.PositiveSmallIntegerField(choices=FactionHappiness.choices)
+    happiness = models.PositiveSmallIntegerField(
+        choices=FactionHappiness.choices, null=True
+    )
     influence = models.FloatField()
     modified = models.DateTimeField(null=True)
 
+
+
+    def has_states_changed(
+        self, states: [], recovering_states: [], pending_states: []
+    ) -> bool:
+        states_ids = [f.id for f in self.states.only("id").order_by("id").all()]
+        if states_ids != list(sorted([s.value for s in states])):
+            return True
+
+        recovering_states_ids = [
+            f.id for f in self.recovering_states.only("id").order_by("id").all()
+        ]
+        if recovering_states_ids != list(sorted([s.value for s in recovering_states])):
+            return True
+
+        pending_states_ids = [
+            f.id for f in self.pending_states.only("id").order_by("id").all()
+        ]
+
+        if pending_states_ids != list(sorted([s.value for s in pending_states])):
+            return True
+
+        return False
+
     def __str__(self):
-        return f"{self.faction.name}"
+        return f"{self.faction} in {self.system}"
 
 
 class Faction(models.Model):
@@ -752,8 +781,12 @@ class Faction(models.Model):
     home_system = models.ForeignKey(
         System, on_delete=models.SET_NULL, related_name="factions", null=True
     )
-    allegiance = models.PositiveSmallIntegerField(choices=Superpowers.choices, null=True)
-    government = models.PositiveSmallIntegerField(choices=Governments.choices, null=True)
+    allegiance = models.PositiveSmallIntegerField(
+        choices=Superpowers.choices, null=True
+    )
+    government = models.PositiveSmallIntegerField(
+        choices=Governments.choices, null=True
+    )
     is_player = models.BooleanField()
     tradedangerous_id = models.IntegerField(unique=True, null=True)
 

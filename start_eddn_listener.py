@@ -21,5 +21,5 @@ if __name__ == "__main__":
     #         else:
     #             dupe_station.delete()
 
-    # models.Faction.objects.all().delete()
+    # models.LocalFaction.objects.all().delete()
     # EDData().start_live_listener(daemon=False)

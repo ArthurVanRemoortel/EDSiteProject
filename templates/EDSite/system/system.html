@@ -114,8 +114,35 @@
                     </div>
                 </div>
                 <div class="container  mb-2" id="factionsTab">
-                    <div class="">
-                    </div>
+                    <table class="table is-hoverable is-fullwidth">
+                        <thead>
+                        <tr>
+                            <th class=""><abbr title="Name">Name</abbr></th>
+                            <th class=""><abbr title="Name">Government</abbr></th>
+                            <th class=""><abbr title="Name">Allegiance</abbr></th>
+                            <th class=""><abbr title="Name">States</abbr></th>
+                            <th class=""><abbr title="Name">Influence</abbr></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for local_faction in system.local_factions.all %}
+                            <tr>
+                                <th>
+                                    <span class="icon is-small mr-2"><i class="fa-solid fa-people-group" aria-hidden="true"></i></span>
+                                    <a href="#">{{ local_faction.faction.name }}</a>
+                                </th>
+                                <th>{{ local_faction.faction.get_government_display }}</th>
+                                <th>{{ local_faction.faction.get_allegiance_display }}</th>
+                                <th>
+                                    {% for state in local_faction.states.all %}
+                                        <span class="tag is-primary is-rounded mr-2">{{ state.name}}</span>
+                                    {% endfor %}
+                                </th>
+                                <th>{{ local_faction.influence }}</th>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 <div class="container  mb-2" id="bodiesTab">
                     <div class="">
@@ -187,24 +214,24 @@
             activeTabButton = overviewTabButton
         }
 
-        function showSystemFactionsTab() {
+        function showSystemBodiesTab() {
             if (activeTab === bodiesTab) return
             activeTab.hide()
             bodiesTab.show()
             activeTabButton.removeClass("is-active")
-            systemFactionsTabButton.addClass("is-active")
+            systemBodiesTabButton.addClass("is-active")
             activeTab = bodiesTab
-            activeTabButton = systemFactionsTabButton
+            activeTabButton = systemBodiesTabButton
         }
 
-        function showSystemBodiesTab() {
+        function showSystemFactionsTab() {
             if (activeTab === factionsTab) return
             activeTab.hide()
             factionsTab.show()
             activeTabButton.removeClass("is-active")
-            systemBodiesTabButton.addClass("is-active")
+            systemFactionsTabButton.addClass("is-active")
             activeTab = factionsTab
-            activeTabButton = systemBodiesTabButton
+            activeTabButton = systemFactionsTabButton
         }
 
         $(document).ready(function () {
