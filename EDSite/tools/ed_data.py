@@ -104,10 +104,12 @@ class EDData(metaclass=SingletonMeta):
 
         self.local_faction_dict = {
             (
-                local_faction.system.name.lower(),
+                local_faction.system.id,
                 local_faction.faction.name.lower(),
             ): local_faction
-            for local_faction in LocalFaction.objects.select_related('system', 'faction').all()
+            for local_faction in LocalFaction.objects.select_related(
+                "system", "faction"
+            ).all()
         }
 
         print("Created new EDData object")

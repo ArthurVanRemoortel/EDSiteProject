@@ -319,6 +319,21 @@ class CommodityProcessor(EDDNSchemaProcessor):
                 station.modified = modified
                 to_update_stations[station.id] = station
 
+            if station:
+                # logger.warning(f"{station}, {modified - station.modified}")
+                if is_carrier_name(
+                    station.name
+                ) or modified - station.modified > datetime.timedelta(minutes=4):
+                    # Update the listings.
+                    if station not in new_listings:
+                        new_listings[station] = []
+                    new_listings[station] = self.parse_listings(
+                        station, modified, commodities
+                    )
+                    station.modified = modified
+                    to_update_stations[station.id] = station
+
+
             if not station:
                 # It's a new station:
                 if (system_name, station_name) not in self.retry_stations:
@@ -330,7 +345,6 @@ class CommodityProcessor(EDDNSchemaProcessor):
                     }
                 # else:
                 #     logger.warning(f"Station {station_name} was already in retry_stations. It has been skipped.")
-
         for new_station_data in new_stations.values():
             station_name = new_station_data["station_name"]
             system = new_station_data["system"]
@@ -351,7 +365,6 @@ class CommodityProcessor(EDDNSchemaProcessor):
                     station_name=station_name,
                     extra={"listings": listings},
                 )
-
             if station:
                 if station not in new_listings:
                     new_listings[station] = []
@@ -382,16 +395,18 @@ class CommodityProcessor(EDDNSchemaProcessor):
 
         if new_listings:
             updated_stations = create_listings(new_listings)
+            # for s in new_listings.keys():
+            #     logger.info(f"Updated listings for {s}")
             new_listings.clear()
-            for updated_station in updated_stations:
-                if (updated_station.system.name, updated_station.name) in new_stations:
-                    # logger.warning(f'Skipped update of station {updated_station} that was just created.')
-                    continue
-                if updated_station.id not in to_update_stations:
-                    to_update_stations[updated_station.id] = updated_station
-                to_update_stations[
-                    updated_station.id
-                ].modified = updated_station.modified
+            # for updated_station in updated_stations:
+            #     if (updated_station.system.name, updated_station.name) in new_stations:
+            #         # logger.warning(f'Skipped update of station {updated_station} that was just created.')
+            #         continue
+            #     if updated_station.id not in to_update_stations:
+            #         to_update_stations[updated_station.id] = updated_station
+            #     to_update_stations[
+            #         updated_station.id
+            #     ].modified = updated_station.modified
 
         if to_update_stations:
             with transaction.atomic():
@@ -622,13 +637,20 @@ class JournalProcessor(EDDNSchemaProcessor):
                         local_faction_data.get("recovering_states"),
                         local_faction_data.get("pending_states"),
                     )
-                    other_changed = existing_local_faction.influence != local_faction_data.get("influence")
+                    other_changed = (
+                        existing_local_faction.influence
+                        != local_faction_data.get("influence")
+                    )
                     # logger.info(f"{existing_local_faction}, {other_changed}, {states_changed}")
-                    if states_changed or other_changed:  # TODO: Or anything else changed?
+                    if (
+                        states_changed or other_changed
+                    ):  # TODO: Or anything else changed?
                         # logger.warning(f"Trying to update LocalFaction {existing_local_faction} updated in {system} (states_changed={states_changed}, other_changed={other_changed})")
                         with transaction.atomic():
-                            l_faction: LocalFaction = LocalFaction.objects.select_for_update().get(
-                                pk=existing_local_faction.id
+                            l_faction: LocalFaction = (
+                                LocalFaction.objects.select_for_update().get(
+                                    pk=existing_local_faction.id
+                                )
                             )
                             if states_changed:
                                 local_faction_data.get("states")
@@ -643,18 +665,26 @@ class JournalProcessor(EDDNSchemaProcessor):
                                 l_faction.recovering_states.set(
                                     [
                                         ed_data.EDData().cache_find_state(s.value)
-                                        for s in local_faction_data.get("recovering_states")
+                                        for s in local_faction_data.get(
+                                            "recovering_states"
+                                        )
                                     ]
                                 )
                                 l_faction.pending_states.set(
                                     [
                                         ed_data.EDData().cache_find_state(s.value)
-                                        for s in local_faction_data.get("pending_states")
+                                        for s in local_faction_data.get(
+                                            "pending_states"
+                                        )
                                     ]
                                 )
                             if other_changed or states_changed:
-                                l_faction.happiness = local_faction_data.get("happiness")
-                                l_faction.influence = local_faction_data.get("influence")
+                                l_faction.happiness = local_faction_data.get(
+                                    "happiness"
+                                )
+                                l_faction.influence = local_faction_data.get(
+                                    "influence"
+                                )
                                 l_faction.modified = local_faction_data.get("modified")
 
                             l_faction.save()
@@ -717,7 +747,7 @@ class EDDNListener:
                             if processor:
                                 processor.add_message(message)
                     else:
-                        print("Disconnect from EDDN (After timeout)")
+                        logger.error("Disconnect from EDDN (After timeout)")
                         self.subscriber.disconnect(EDDN_URI)
                         break
 

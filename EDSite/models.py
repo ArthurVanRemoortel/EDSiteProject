@@ -475,7 +475,7 @@ class Station(models.Model):
         )
 
     def __str__(self):
-        return f"{self.fullname}"
+        return f"{self.fullname} in system with id={self.system_id}"
 
 
 class LiveListing(models.Model):
