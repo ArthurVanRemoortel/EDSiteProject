@@ -66,6 +66,8 @@ def join(iterable, string):
 
 @register.filter
 def distance_to(system1: System, system2: System):
+    if not system2:
+        return '?'
     return int(system1.distance_to(system2))
 
 

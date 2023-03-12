@@ -253,7 +253,8 @@ class EDData(metaclass=SingletonMeta):
         deleted_stations_ids = set()
         carrier_names = {}
         td_stations_rows = sorted(
-            list(tdb.getDB().cursor().execute("SELECT * FROM Station")), key=lambda r: r[0]
+            list(tdb.getDB().cursor().execute("SELECT * FROM Station")),
+            key=lambda r: r[0],
         )
         td_stations_ids = set(r[0] for r in td_stations_rows)
         for row in tqdm(td_stations_rows):
@@ -492,7 +493,12 @@ class EDData(metaclass=SingletonMeta):
         t0 = time.time()
         # min_station_id, max_station_id = list(tdb.getDB().cursor().execute('SELECT (min("station_id"), max("station_id")) FROM StationItem'))
         td_listings_station_ids = sorted(
-            [r[0] for r in tdb.getDB().cursor().execute('SELECT "station_id" FROM StationItem')]
+            [
+                r[0]
+                for r in tdb.getDB()
+                .cursor()
+                .execute('SELECT "station_id" FROM StationItem')
+            ]
         )
         TD_PART_SIZE = 200000
         new_listings = []
@@ -518,14 +524,18 @@ class EDData(metaclass=SingletonMeta):
             if full_update:
                 # TODO: Maybe parse from csv file instead.
                 td_row_part = list(
-                    tdb.getDB().cursor().execute(
+                    tdb.getDB()
+                    .cursor()
+                    .execute(
                         "SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, item_id",
                         [min_station_td_id, max_station_td_id],
                     )
                 )
             else:
                 td_row_part = list(
-                    tdb.getDB().cursor().execute(
+                    tdb.getDB()
+                    .cursor()
+                    .execute(
                         "SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, item_id",
                         [min_station_td_id, max_station_td_id],
                     )
