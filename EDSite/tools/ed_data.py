@@ -15,7 +15,7 @@ from django.forms.models import model_to_dict
 import zmq
 from django import db
 from django.core.paginator import Paginator
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Q
 from tqdm import tqdm
 from tradedangerous import tradedb, commands
@@ -253,7 +253,7 @@ class EDData(metaclass=SingletonMeta):
         deleted_stations_ids = set()
         carrier_names = {}
         td_stations_rows = sorted(
-            list(tdb.cur.execute("SELECT * FROM Station")), key=lambda r: r[0]
+            list(tdb.getDB().cursor().execute("SELECT * FROM Station")), key=lambda r: r[0]
         )
         td_stations_ids = set(r[0] for r in td_stations_rows)
         for row in tqdm(td_stations_rows):
@@ -438,8 +438,11 @@ class EDData(metaclass=SingletonMeta):
                     ),
                     average_price=td_item.avgPrice if td_item.avgPrice else -1,
                 )
-                commodity.save()
-                print(f"Adding commodity: {commodity}")
+                try:
+                    commodity.save()
+                    print(f"Adding commodity: {commodity}")
+                except IntegrityError as e:
+                    print(f"Could not add commodity: {commodity} because {e}")
 
         print("Updating rares...")
         td_rare: TDIRareItem
@@ -487,9 +490,9 @@ class EDData(metaclass=SingletonMeta):
         print("Carriers of interest: ", carriers_of_interest)
         print("Starting TD query...")
         t0 = time.time()
-        # min_station_id, max_station_id = list(tdb.cur.execute('SELECT (min("station_id"), max("station_id")) FROM StationItem'))
+        # min_station_id, max_station_id = list(tdb.getDB().cursor().execute('SELECT (min("station_id"), max("station_id")) FROM StationItem'))
         td_listings_station_ids = sorted(
-            [r[0] for r in tdb.cur.execute('SELECT "station_id" FROM StationItem')]
+            [r[0] for r in tdb.getDB().cursor().execute('SELECT "station_id" FROM StationItem')]
         )
         TD_PART_SIZE = 200000
         new_listings = []
@@ -515,14 +518,14 @@ class EDData(metaclass=SingletonMeta):
             if full_update:
                 # TODO: Maybe parse from csv file instead.
                 td_row_part = list(
-                    tdb.cur.execute(
+                    tdb.getDB().cursor().execute(
                         "SELECT * FROM StationItem WHERE station_id >= ? and station_id <= ? ORDER BY station_id, item_id",
                         [min_station_td_id, max_station_td_id],
                     )
                 )
             else:
                 td_row_part = list(
-                    tdb.cur.execute(
+                    tdb.getDB().cursor().execute(
                         "SELECT * FROM StationItem WHERE from_live = 1 and station_id >= ? and station_id <= ? ORDER BY station_id, item_id",
                         [min_station_td_id, max_station_td_id],
                     )
@@ -564,7 +567,12 @@ class EDData(metaclass=SingletonMeta):
                     # if station.fleet:
                     #     total_updated_carriers += 1
                     station_id = station.id
-                    com_id = commodities_td_to_django_ids[item_td_id]
+                    com_id = commodities_td_to_django_ids.get(item_td_id, None)
+                    if not com_id:
+                        print(
+                            f"Warning: Did not find commodity with game_id={item_td_id}"
+                        )
+                        continue
 
                     visited_listings.add((station_id, com_id))
 

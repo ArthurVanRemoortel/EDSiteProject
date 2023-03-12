@@ -3,11 +3,11 @@ version: '1.0'
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000 --insecure --noreload
+    command: python manage.py runserver 0.0.0.0:8070 --insecure --noreload
     volumes:
       - .:/code
     ports:
-      - "8000:8000"
+      - "8070:8070"
     depends_on:
       - redis
     env_file:

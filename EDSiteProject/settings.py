@@ -165,6 +165,7 @@ STATICFILES_FINDERS = [
     "django.contrib.staticfiles.finders.AppDirectoriesFinder",
     "sass_processor.finders.CssFinder",
 ]
+
 COMPRESS_ROOT = BASE_DIR / "EDSite" / "static"
 SASS_PROCESSOR_ROOT = COMPRESS_ROOT
 # Internationalization

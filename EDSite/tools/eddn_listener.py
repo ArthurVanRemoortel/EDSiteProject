@@ -305,6 +305,9 @@ class CommodityProcessor(EDDNSchemaProcessor):
                 station_name=station_name, system_name=system_name
             )
 
+            if station and station.name == "K7Q-BQL":
+                logger.info(f"Message about station {station}")
+
             if not system:
                 # logger.warning(f"System {system_name} for {station_name} is not known.")
                 continue
@@ -314,7 +317,9 @@ class CommodityProcessor(EDDNSchemaProcessor):
                 and (station and system)
                 and (station.system_id != system.id)
             ):
-                # logger.info(f"Moved carrier {station} from {station.system} to {system}")
+                logger.info(
+                    f"Moved carrier {station} from {station.system} to {system}"
+                )
                 station.system_id = system.id
                 station.modified = modified
                 to_update_stations[station.id] = station
@@ -332,7 +337,6 @@ class CommodityProcessor(EDDNSchemaProcessor):
                     )
                     station.modified = modified
                     to_update_stations[station.id] = station
-
 
             if not station:
                 # It's a new station:
