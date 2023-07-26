@@ -3,7 +3,7 @@ version: '1.0'
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8070 --insecure --noreload
+#    command: python manage.py runserver 0.0.0.0:8070 --insecure --noreload
     volumes:
       - .:/code
     ports:
@@ -21,6 +21,22 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  db:
+    image: postgres:15-bullseye
+    container_name: edsite-db
+    #    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    env_file:
+      - .env.docker
+#    networks:
+#      - edsite-network
 
 volumes:
   redis_data:

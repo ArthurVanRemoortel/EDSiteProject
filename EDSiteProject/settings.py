@@ -30,18 +30,12 @@ except ModuleNotFoundError:
     pass
 
 HISTORIC_DIFFERENCE_DELTA = 5
-
 HISTORIC_CACHE_TIMEOUT_HOURS = 12
 
-DATABASE_HOST = os.getenv("DATABASE_HOST")
-
-DATABASE_USER = os.getenv("DATABASE_USER")
-
-DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD")
-
-DATABASE_PORT = os.getenv("DATABASE_PORT")
-
-DATABASE_NAME = os.getenv("DATABASE_NAME")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
 DJANGO_SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
@@ -53,7 +47,6 @@ DEBUG_MODE = os.getenv("DEBUG_MODE") == "True"
 
 EDSM_API_KEY = os.getenv("EDSM_API_KEY")
 
-print(f"Connecting to DB: {DATABASE_HOST}:{DATABASE_PORT}.")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -118,14 +111,15 @@ WSGI_APPLICATION = "EDSiteProject.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": DATABASE_NAME,
-        "USER": DATABASE_USER,
-        "PASSWORD": DATABASE_PASSWORD,
-        "HOST": DATABASE_HOST,
-        "PORT": DATABASE_PORT,
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": POSTGRES_DB,
+        "USER": POSTGRES_USER,
+        "PASSWORD": POSTGRES_PASSWORD,
+        "HOST": POSTGRES_HOST,
+        "PORT": 5432,
     }
 }
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",

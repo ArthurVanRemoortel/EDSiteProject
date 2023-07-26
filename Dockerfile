@@ -29,3 +29,7 @@ RUN poetry config virtualenvs.create false  \
 # Creating folders, and files for a project:
 COPY . /code
 
+ADD docker-entrypoint.sh /code/docker-entrypoint.sh
+RUN chmod a+x /code/docker-entrypoint.sh
+ENTRYPOINT ["/code/docker-entrypoint.sh"]
+
