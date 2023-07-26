@@ -30,7 +30,7 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     ports:
-      - "5432:5432"
+      - "8071:5432"
     volumes:
       - ./data/db:/var/lib/postgresql/data
     env_file:
